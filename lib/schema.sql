@@ -49,6 +49,8 @@ CREATE TABLE IF NOT EXISTS rooms (
     room_number TEXT NOT NULL,
     booking_pin TEXT, -- 4 to 6 digit code generated on check-in
     is_occupied BOOLEAN DEFAULT FALSE,
+    checkout_date TEXT,
+    checkout_time TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     UNIQUE(hotel_id, room_number)
 );

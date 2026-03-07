@@ -59,6 +59,8 @@ export interface Room {
     room_number: string;
     booking_pin: string | null;
     is_occupied: boolean;
+    checkout_date?: string;
+    checkout_time?: string;
     created_at?: string;
 }
 
@@ -596,13 +598,19 @@ export function useRooms(hotelId?: string) {
 /**
  * Check-in a room logic: generates a 4-digit PIN
  */
-export async function checkInRoom(roomId: string, hotelId: string) {
+export async function checkInRoom(roomId: string, hotelId: string, checkoutDate?: string, checkoutTime?: string) {
     const pin = Math.floor(1000 + Math.random() * 9000).toString(); // 4-digit PIN
 
     if (isDemoMode()) {
         const rooms = getDemoRooms(hotelId);
         const updatedRooms = rooms.map(r =>
-            r.id === roomId ? { ...r, is_occupied: true, booking_pin: pin } : r
+            r.id === roomId ? {
+                ...r,
+                is_occupied: true,
+                booking_pin: pin,
+                checkout_date: checkoutDate,
+                checkout_time: checkoutTime
+            } : r
         );
         saveDemoRooms(hotelId, updatedRooms);
         return { data: null, error: null, pin };
@@ -612,7 +620,9 @@ export async function checkInRoom(roomId: string, hotelId: string) {
         .from('rooms')
         .update({
             is_occupied: true,
-            booking_pin: pin
+            booking_pin: pin,
+            checkout_date: checkoutDate,
+            checkout_time: checkoutTime
         })
         .eq('id', roomId)
         .eq('hotel_id', hotelId);
@@ -628,7 +638,13 @@ export async function checkOutRoom(roomId: string, hotelId: string) {
     if (isDemoMode()) {
         const rooms = getDemoRooms(hotelId);
         const updatedRooms = rooms.map(r =>
-            r.id === roomId ? { ...r, is_occupied: false, booking_pin: null } : r
+            r.id === roomId ? {
+                ...r,
+                is_occupied: false,
+                booking_pin: null,
+                checkout_date: undefined,
+                checkout_time: undefined
+            } : r
         );
         saveDemoRooms(hotelId, updatedRooms);
         return { data: null, error: null };
@@ -638,7 +654,9 @@ export async function checkOutRoom(roomId: string, hotelId: string) {
         .from('rooms')
         .update({
             is_occupied: false,
-            booking_pin: null
+            booking_pin: null,
+            checkout_date: null,
+            checkout_time: null
         })
         .eq('id', roomId)
         .eq('hotel_id', hotelId);

@@ -8,6 +8,8 @@ import { motion, AnimatePresence } from "framer-motion";
 
 interface GuestContextType {
     roomNumber: string;
+    checkoutDate?: string;
+    checkoutTime?: string;
 }
 
 const GuestContext = createContext<GuestContextType>({ roomNumber: "" });
@@ -23,6 +25,8 @@ function AuthLogic({ children }: { children: React.ReactNode }) {
 
     const [isVerified, setIsVerified] = useState<boolean | null>(null);
     const [roomNumber, setRoomNumber] = useState<string>("");
+    const [checkoutDate, setCheckoutDate] = useState<string>("");
+    const [checkoutTime, setCheckoutTime] = useState<string>("");
     const [pin, setPin] = useState<string>("");
     const [error, setError] = useState<string>("");
     const [isVerifying, setIsVerifying] = useState(false);
@@ -34,6 +38,8 @@ function AuthLogic({ children }: { children: React.ReactNode }) {
         const urlPin = searchParams?.get("pin");
         const storedRoom = localStorage.getItem(`hotel_room_${hotelSlug}`);
         const storedPin = localStorage.getItem(`hotel_pin_${hotelSlug}`);
+        const storedCheckoutDate = localStorage.getItem(`hotel_checkout_date_${hotelSlug}`);
+        const storedCheckoutTime = localStorage.getItem(`hotel_checkout_time_${hotelSlug}`);
 
         // 1. Determine which room we are dealing with. URL always wins.
         const effectiveRoom = urlRoom || storedRoom;
@@ -56,13 +62,19 @@ function AuthLogic({ children }: { children: React.ReactNode }) {
                 verifyBookingPin(branding.id, effectiveRoom, effectivePin).then(res => {
                     if (res.success) {
                         setIsVerified(true);
+                        setCheckoutDate(res.data.checkout_date || "");
+                        setCheckoutTime(res.data.checkout_time || "");
                         localStorage.setItem(`hotel_room_${hotelSlug}`, effectiveRoom);
                         localStorage.setItem(`hotel_pin_${hotelSlug}`, effectivePin);
+                        if (res.data.checkout_date) localStorage.setItem(`hotel_checkout_date_${hotelSlug}`, res.data.checkout_date);
+                        if (res.data.checkout_time) localStorage.setItem(`hotel_checkout_time_${hotelSlug}`, res.data.checkout_time);
                     } else {
                         // Cleanup if stored session is invalid
                         if (effectiveRoom === storedRoom) {
                             localStorage.removeItem(`hotel_room_${hotelSlug}`);
                             localStorage.removeItem(`hotel_pin_${hotelSlug}`);
+                            localStorage.removeItem(`hotel_checkout_date_${hotelSlug}`);
+                            localStorage.removeItem(`hotel_checkout_time_${hotelSlug}`);
                         }
                         setIsVerified(false);
                     }
@@ -91,6 +103,11 @@ function AuthLogic({ children }: { children: React.ReactNode }) {
         if (res.success) {
             localStorage.setItem(`hotel_room_${hotelSlug}`, roomNumber);
             localStorage.setItem(`hotel_pin_${hotelSlug}`, pin);
+            if (res.data.checkout_date) localStorage.setItem(`hotel_checkout_date_${hotelSlug}`, res.data.checkout_date);
+            if (res.data.checkout_time) localStorage.setItem(`hotel_checkout_time_${hotelSlug}`, res.data.checkout_time);
+
+            setCheckoutDate(res.data.checkout_date || "");
+            setCheckoutTime(res.data.checkout_time || "");
             setIsVerified(true);
         } else {
             setError("Invalid Room Number or PIN. Please check with reception.");
@@ -184,7 +201,7 @@ function AuthLogic({ children }: { children: React.ReactNode }) {
     }
 
     return (
-        <GuestContext.Provider value={{ roomNumber }}>
+        <GuestContext.Provider value={{ roomNumber, checkoutDate, checkoutTime }}>
             {children}
         </GuestContext.Provider>
     );

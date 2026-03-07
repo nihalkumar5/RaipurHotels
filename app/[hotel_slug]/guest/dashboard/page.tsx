@@ -28,7 +28,7 @@ export default function GuestDashboard() {
     const { branding, loading } = useHotelBranding(hotelSlug);
     const { offers, loading: loadingOffers } = useSpecialOffers(branding?.id);
     const requests = useSupabaseRequests(branding?.id);
-    const { roomNumber } = useGuestRoom();
+    const { roomNumber, checkoutDate, checkoutTime } = useGuestRoom();
 
     const [currentOfferIndex, setCurrentOfferIndex] = useState(0);
     const [scrolled, setScrolled] = useState(false);
@@ -187,14 +187,16 @@ export default function GuestDashboard() {
                     </div>
 
                     {/* Check-out Details */}
-                    <div className="mb-6 flex items-end justify-between">
+                    <div className="mb-6 flex items-end justify-between text-slate-400">
                         <div>
                             <p className="text-[11px] font-black uppercase tracking-widest text-slate-400 mb-2">Check-out</p>
-                            <p className="text-xl font-sans font-black italic text-slate-900 tracking-tighter">24 Jun, 2026</p>
+                            <p className="text-xl font-serif italic text-slate-900 tracking-tight leading-none">
+                                {checkoutDate ? new Date(checkoutDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : "24 Jun, 2026"}
+                            </p>
                         </div>
                         <div className="text-right">
                             <div className="px-5 py-2.5 bg-amber-50 rounded-2xl border border-amber-100 shadow-sm flex flex-col items-center">
-                                <p className="text-[14px] font-black text-amber-600 uppercase tracking-tighter leading-none">11:00 AM</p>
+                                <p className="text-[14px] font-black text-amber-600 uppercase tracking-tighter leading-none">{checkoutTime || "11:00 AM"}</p>
                                 <p className="text-[8px] font-bold text-amber-600/40 uppercase tracking-widest mt-1">Sharp</p>
                             </div>
                         </div>

@@ -36,15 +36,24 @@ export default function RoomsPage() {
         setIsAdding(false);
     };
 
+    const [checkInDetails, setCheckInDetails] = useState<{ roomId: string, date: string, time: string } | null>(null);
+
     const handleCheckIn = async (roomId: string) => {
-        if (!branding?.id) return;
-        const { pin } = await checkInRoom(roomId, branding.id);
+        if (!branding?.id || !checkInDetails) return;
+        const { pin } = await checkInRoom(roomId, branding.id, checkInDetails.date, checkInDetails.time);
 
         // Local update for Demo Mode
         setRoomsList(prev => prev.map(r =>
-            r.id === roomId ? { ...r, is_occupied: true, booking_pin: pin } : r
+            r.id === roomId ? {
+                ...r,
+                is_occupied: true,
+                booking_pin: pin,
+                checkout_date: checkInDetails.date,
+                checkout_time: checkInDetails.time
+            } : r
         ));
 
+        setCheckInDetails(null);
         alert(`Room Checked In! Guests must use the generated PIN: ${pin} to access the menu.`);
     };
 
@@ -55,7 +64,13 @@ export default function RoomsPage() {
 
             // Local update for Demo Mode
             setRoomsList(prev => prev.map(r =>
-                r.id === roomId ? { ...r, is_occupied: false, booking_pin: null } : r
+                r.id === roomId ? {
+                    ...r,
+                    is_occupied: false,
+                    booking_pin: null,
+                    checkout_date: undefined,
+                    checkout_time: undefined
+                } : r
             ));
         }
     };
@@ -133,6 +148,12 @@ export default function RoomsPage() {
                                             </div>
                                             <Key className="text-amber-300 w-8 h-8" />
                                         </div>
+                                        {room.checkout_date && (
+                                            <div className="mb-4 text-center">
+                                                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Check-out</p>
+                                                <p className="text-sm font-bold text-slate-700">{room.checkout_date} at {room.checkout_time || '11:00 AM'}</p>
+                                            </div>
+                                        )}
                                         <button
                                             onClick={() => handleCheckOut(room.id)}
                                             className="w-full flex items-center justify-center py-3 bg-slate-100 text-slate-600 font-bold rounded-xl hover:bg-slate-200 transition-all active:scale-95"
@@ -141,13 +162,55 @@ export default function RoomsPage() {
                                         </button>
                                     </div>
                                 ) : (
-                                    <button
-                                        onClick={() => handleCheckIn(room.id)}
-                                        className="w-full flex items-center justify-center py-4 bg-blue-600 text-white font-black rounded-2xl hover:bg-blue-700 shadow-lg shadow-blue-200 transition-all active:scale-95"
-                                        style={{ backgroundColor: branding?.primaryColor }}
-                                    >
-                                        Check In Guest
-                                    </button>
+                                    <div className="w-full">
+                                        {checkInDetails?.roomId === room.id ? (
+                                            <div className="space-y-4">
+                                                <div className="grid grid-cols-2 gap-3">
+                                                    <div>
+                                                        <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 block mb-1 ml-1">Date</label>
+                                                        <input
+                                                            type="date"
+                                                            value={checkInDetails!.date}
+                                                            onChange={(e) => setCheckInDetails({ ...checkInDetails!, date: e.target.value })}
+                                                            className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 font-bold text-xs focus:ring-2 focus:ring-blue-100 outline-none transition-all"
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 block mb-1 ml-1">Time</label>
+                                                        <input
+                                                            type="time"
+                                                            value={checkInDetails!.time}
+                                                            onChange={(e) => setCheckInDetails({ ...checkInDetails!, time: e.target.value })}
+                                                            className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 font-bold text-xs focus:ring-2 focus:ring-blue-100 outline-none transition-all"
+                                                        />
+                                                    </div>
+                                                </div>
+                                                <div className="flex gap-2">
+                                                    <button
+                                                        onClick={() => handleCheckIn(room.id)}
+                                                        className="flex-1 py-3 bg-blue-600 text-white font-black rounded-xl hover:bg-blue-700 shadow-lg shadow-blue-200 transition-all active:scale-95 text-xs uppercase tracking-widest"
+                                                        style={{ backgroundColor: branding?.primaryColor }}
+                                                    >
+                                                        Confirm
+                                                    </button>
+                                                    <button
+                                                        onClick={() => setCheckInDetails(null)}
+                                                        className="px-4 py-3 bg-slate-100 text-slate-500 font-bold rounded-xl hover:bg-slate-200 transition-all active:scale-95 text-xs"
+                                                    >
+                                                        ×
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <button
+                                                onClick={() => setCheckInDetails({ roomId: room.id, date: new Date().toISOString().split('T')[0], time: "11:00" })}
+                                                className="w-full flex items-center justify-center py-4 bg-blue-600 text-white font-black rounded-2xl hover:bg-blue-700 shadow-lg shadow-blue-200 transition-all active:scale-95"
+                                                style={{ backgroundColor: branding?.primaryColor }}
+                                            >
+                                                Check In Guest
+                                            </button>
+                                        )}
+                                    </div>
                                 )}
 
                                 <button className="w-full mt-3 flex items-center justify-center py-3 bg-transparent text-slate-500 font-bold rounded-xl hover:bg-slate-50 transition-all">
