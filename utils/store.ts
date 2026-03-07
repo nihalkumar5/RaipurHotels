@@ -194,6 +194,8 @@ export function useHotelBranding(slug: string | undefined) {
                     logoImage: data.logo_image,
                     primaryColor: data.primary_color,
                     accentColor: data.accent_color,
+                    wifiName: data.wifi_name,
+                    wifiPassword: data.wifi_password,
                 });
             } else {
                 // Mock branding fallback
@@ -244,6 +246,8 @@ export function useHotelBranding(slug: string | undefined) {
                     logoImage: data.logo_image,
                     primaryColor: data.primary_color,
                     accentColor: data.accent_color,
+                    wifiName: data.wifi_name,
+                    wifiPassword: data.wifi_password,
                 });
             })
             .subscribe();
