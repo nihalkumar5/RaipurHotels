@@ -322,11 +322,11 @@ export default function GuestDashboard() {
                     </div>
                 </motion.section>
 
-                {/* 3. Smart Requests (Express Items - Premium Light Theme) */}
+                {/* 3. Smart Requests (Express Items - Premium Dark Theme) */}
                 <motion.section variants={item}>
                     <div className="flex items-center justify-between mb-6">
                         <div className="flex items-center">
-                            <Zap className="w-4 h-4 text-amber-600 mr-2" />
+                            <Zap className="w-4 h-4 text-amber-500 mr-2" />
                             <h2 className="text-xl font-black italic uppercase tracking-tighter text-slate-900">Quick Requests</h2>
                         </div>
                         <span className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-300">Fast Response</span>
@@ -334,38 +334,38 @@ export default function GuestDashboard() {
 
                     <div className="grid grid-cols-2 gap-4">
                         {[
-                            { label: "Mineral Water", icon: <Droplets />, notes: "1L Bottle", type: "Water", theme: "from-blue-50/50" },
-                            { label: "Clean Towels", icon: <Wind />, notes: "Fresh Set", type: "Towel", theme: "from-slate-50/50" },
-                            { label: "Room Cleaning", icon: <Sparkles />, notes: "Full Service", type: "Cleaning", theme: "from-emerald-50/50" },
-                            { label: "Tea/Coffee", icon: <Coffee />, notes: "Hot Beverage", type: "TeaCoffee", theme: "from-amber-50/50" },
+                            { label: "Mineral Water", icon: <Droplets />, notes: "1L Bottle", type: "Water", color: "from-blue-500/10" },
+                            { label: "Clean Towels", icon: <Wind />, notes: "Fresh Set", type: "Towel", color: "from-slate-500/10" },
+                            { label: "Room Cleaning", icon: <Sparkles />, notes: "Full Service", type: "Cleaning", color: "from-emerald-500/10" },
+                            { label: "Tea/Coffee", icon: <Coffee />, notes: "Hot Beverage", type: "TeaCoffee", color: "from-amber-500/10" },
                         ].map((req, i) => (
                             <button
                                 key={i}
                                 onClick={() => handleQuickRequest(req.type, req.notes)}
-                                className={`bg-white p-6 rounded-[2.5rem] flex flex-col justify-end min-h-[120px] border border-slate-100 shadow-[0_10px_30px_-15px_rgba(0,0,0,0.05)] hover:shadow-xl hover:shadow-slate-200/50 hover:border-amber-200 transition-all duration-500 active:scale-95 group relative overflow-hidden text-left`}
+                                className={`bg-slate-900 p-6 rounded-[2.5rem] flex flex-col justify-end min-h-[125px] border border-slate-800 shadow-2xl hover:shadow-amber-900/10 hover:border-amber-500/30 transition-all duration-500 active:scale-95 group relative overflow-hidden text-left`}
                             >
-                                {/* Subtle Gradient Overlay */}
-                                <div className={`absolute inset-0 bg-gradient-to-br ${req.theme} to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700`}></div>
+                                {/* Subtle Glow Overlay */}
+                                <div className={`absolute inset-0 bg-gradient-to-br ${req.color} to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700`}></div>
 
                                 {/* Premium Shine Effect */}
-                                <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/40 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-[1.5s]"></div>
+                                <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-[1.5s]"></div>
 
-                                {/* Background Icon (Refined Watermark) */}
-                                <div className="absolute top-4 right-4 text-slate-900 opacity-[0.03] group-hover:opacity-[0.08] group-hover:-translate-y-1 group-hover:translate-x-1 transition-all duration-700">
+                                {/* Background Icon (Subtle Watermark) */}
+                                <div className="absolute top-4 right-4 text-white opacity-[0.05] group-hover:opacity-[0.1] group-hover:-translate-y-1 group-hover:translate-x-1 transition-all duration-700">
                                     {renderIcon(req.icon, "w-16 h-16")}
                                 </div>
 
                                 {/* Gold Accent Indicator */}
-                                <div className={`absolute top-6 left-6 w-1 h-3 rounded-full transition-all duration-500 ${submittingType === req.type ? "bg-amber-600 animate-pulse opacity-100" : "bg-amber-600/40 opacity-0 group-hover:opacity-100 group-hover:-translate-y-1"}`}></div>
+                                <div className={`absolute top-6 left-6 w-1 h-3 rounded-full transition-all duration-500 ${submittingType === req.type ? "bg-amber-500 animate-pulse opacity-100" : "bg-amber-500 opacity-0 group-hover:opacity-100 group-hover:-translate-y-1"}`}></div>
 
                                 <div className="relative z-10 w-full">
                                     <div className="flex items-center justify-between w-full">
                                         <div>
-                                            <p className="text-sm font-black text-slate-900 uppercase tracking-tighter italic leading-tight group-hover:translate-x-1 transition-transform duration-300">{req.label}</p>
+                                            <p className="text-sm font-black text-white uppercase tracking-tighter italic leading-tight group-hover:translate-x-1 transition-transform duration-300">{req.label}</p>
                                             <p className="text-[9px] font-bold text-slate-400 mt-1 uppercase tracking-widest group-hover:translate-x-1 transition-transform duration-500">{req.notes}</p>
                                         </div>
                                         {submittingType === req.type && (
-                                            <div className="w-5 h-5 border-2 border-amber-100 border-t-amber-600 rounded-full animate-spin"></div>
+                                            <div className="w-5 h-5 border-2 border-white/20 border-t-amber-500 rounded-full animate-spin"></div>
                                         )}
                                     </div>
                                 </div>
