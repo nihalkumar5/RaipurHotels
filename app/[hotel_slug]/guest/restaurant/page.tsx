@@ -34,9 +34,10 @@ export default function RestaurantPage() {
     const handleOrder = async () => {
         if (!branding?.id) return;
         setIsOrdering(true);
+        // Artificial delay for premium feel
         await new Promise(resolve => setTimeout(resolve, 2000));
 
-        await addSupabaseRequest(branding.id, {
+        const { error } = await addSupabaseRequest(branding.id, {
             room: roomNumber,
             type: `Dining Order (${cart.length} items)`,
             notes: cart.map(item => item.title).join(", "),
@@ -46,8 +47,13 @@ export default function RestaurantPage() {
         });
 
         setIsOrdering(false);
-        setOrderComplete(true);
-        setCart([]);
+
+        if (error) {
+            alert(`Order Failed: ${error.message || 'Please try again or contact the front desk.'}`);
+        } else {
+            setOrderComplete(true);
+            setCart([]);
+        }
     };
 
     const cartTotal = cart.reduce((sum, item) => sum + item.price, 0);

@@ -44,7 +44,7 @@ export default function GuestDashboard() {
 
     const handleQuickWater = async () => {
         if (!branding?.id) return;
-        await addSupabaseRequest(branding.id, {
+        const { error } = await addSupabaseRequest(branding.id, {
             room: roomNumber,
             type: "Water",
             notes: "Immediate Necessity - 500ml",
@@ -52,7 +52,12 @@ export default function GuestDashboard() {
             price: 0,
             total: 0
         });
-        alert("Water request sent! Our staff is on the way.");
+
+        if (error) {
+            alert(`Could not send request: ${error.message || 'Unknown error'}. Please try again or call reception.`);
+        } else {
+            alert("Water request sent! Our staff is on the way.");
+        }
     };
 
     if (loading) return (

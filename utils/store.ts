@@ -319,10 +319,10 @@ export function useSupabaseRequests(hotelId?: string) {
  * Add a new request to Supabase
  */
 export async function addSupabaseRequest(hotelId: string, request: Partial<HotelRequest>) {
-    // Basic validation to prevent obvious failures
-    if (!hotelId || hotelId.length < 20) {
-        console.error("Critical: Invalid Hotel ID provided for request submission:", hotelId);
-        return { data: null, error: { message: "Invalid Hotel Configuration" } };
+    // Basic validation: UUIDs in Supabase are long. Demo IDs can be short (e.g. "demo-desai").
+    if (!isDemoMode() && (!hotelId || hotelId.length < 20)) {
+        console.error("Critical: Invalid Hotel ID provided for production request submission:", hotelId);
+        return { data: null, error: { message: "Invalid Hotel Configuration (Production)" } };
     }
 
     const newRequestData: any = {
