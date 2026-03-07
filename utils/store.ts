@@ -691,6 +691,7 @@ export async function verifyBookingPin(hotelId: string, roomNumber: string, pin:
         return { success: true, data: { id: 'test-room-id', hotel_id: hotelId, room_number: '101', is_occupied: true, booking_pin: '1234' } };
     }
 
+    console.log(`AuthStore: Querying Supabase for Room ${roomNumber} in Hotel ${hotelId}`);
     const { data, error } = await supabase
         .from('rooms')
         .select('*')
@@ -700,8 +701,10 @@ export async function verifyBookingPin(hotelId: string, roomNumber: string, pin:
         .single();
 
     if (error) {
+        console.error("AuthStore: Supabase PIN verification error:", error.message);
         return { success: false, data: null };
     }
+    console.log("AuthStore: Supabase PIN verification successful");
     return { success: true, data };
 }
 

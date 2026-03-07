@@ -32,35 +32,38 @@ function AuthLogic({ children }: { children: React.ReactNode }) {
     const [isVerifying, setIsVerifying] = useState(false);
 
     useEffect(() => {
-        if (!branding?.id || brandingLoading) return;
+        if (brandingLoading) return;
+
+        if (!branding?.id) {
+            console.warn("AuthLogic: No branding ID found. Hotel might not exist.");
+            setIsVerified(false);
+            return;
+        }
 
         const urlRoom = searchParams?.get("room");
         const urlPin = searchParams?.get("pin");
         const storedRoom = localStorage.getItem(`hotel_room_${hotelSlug}`);
         const storedPin = localStorage.getItem(`hotel_pin_${hotelSlug}`);
-        const storedCheckoutDate = localStorage.getItem(`hotel_checkout_date_${hotelSlug}`);
-        const storedCheckoutTime = localStorage.getItem(`hotel_checkout_time_${hotelSlug}`);
 
-        // 1. Determine which room we are dealing with. URL always wins.
         const effectiveRoom = urlRoom || storedRoom;
-
-        // 2. If room changed (URL room != stored room), we must re-verify PIN
-        // unless the URL itself contains a valid PIN (re-enabled for scanning ease)
         let effectivePin = storedPin;
+
+        console.log("AuthLogic: Auto-verify check", { urlRoom, storedRoom, effectiveRoom, hasUrlPin: !!urlPin, hasStoredPin: !!storedPin });
+
         if (urlRoom && urlRoom !== storedRoom) {
-            effectivePin = urlPin || ""; // Reset PIN if room changed and no new PIN in URL
-        } else if (!urlRoom && storedRoom) {
-            effectivePin = storedPin;
+            console.log("AuthLogic: Room changed from stored session, resetting PIN check.");
+            effectivePin = urlPin || "";
         }
 
         if (effectiveRoom) {
             setRoomNumber(effectiveRoom);
 
             if (effectivePin) {
-                setPin(effectivePin);
+                console.log(`AuthLogic: Attempting auto-verify for Room ${effectiveRoom}`);
                 setIsVerifying(true);
                 verifyBookingPin(branding.id, effectiveRoom, effectivePin).then(res => {
                     if (res.success) {
+                        console.log("AuthLogic: Auto-verify successful");
                         setIsVerified(true);
                         setCheckoutDate(res.data.checkout_date || "");
                         setCheckoutTime(res.data.checkout_time || "");
@@ -69,7 +72,7 @@ function AuthLogic({ children }: { children: React.ReactNode }) {
                         if (res.data.checkout_date) localStorage.setItem(`hotel_checkout_date_${hotelSlug}`, res.data.checkout_date);
                         if (res.data.checkout_time) localStorage.setItem(`hotel_checkout_time_${hotelSlug}`, res.data.checkout_time);
                     } else {
-                        // Cleanup if stored session is invalid
+                        console.warn("AuthLogic: Auto-verify failed (Invalid PIN or Session)");
                         if (effectiveRoom === storedRoom) {
                             localStorage.removeItem(`hotel_room_${hotelSlug}`);
                             localStorage.removeItem(`hotel_pin_${hotelSlug}`);
@@ -79,11 +82,17 @@ function AuthLogic({ children }: { children: React.ReactNode }) {
                         setIsVerified(false);
                     }
                     setIsVerifying(false);
+                }).catch(err => {
+                    console.error("AuthLogic: Auto-verify crash", err);
+                    setIsVerified(false);
+                    setIsVerifying(false);
                 });
             } else {
+                console.log("AuthLogic: No PIN available for auto-verify");
                 setIsVerified(false);
             }
         } else {
+            console.log("AuthLogic: No room number determined yet");
             setIsVerified(false);
         }
     }, [branding?.id, hotelSlug, searchParams, brandingLoading]);
@@ -97,21 +106,29 @@ function AuthLogic({ children }: { children: React.ReactNode }) {
             return;
         }
 
+        console.log(`AuthLogic: Manual verify for Room ${roomNumber}`);
         setIsVerifying(true);
-        const res = await verifyBookingPin(branding.id, roomNumber, pin);
+        try {
+            const res = await verifyBookingPin(branding.id, roomNumber, pin);
 
-        if (res.success) {
-            localStorage.setItem(`hotel_room_${hotelSlug}`, roomNumber);
-            localStorage.setItem(`hotel_pin_${hotelSlug}`, pin);
-            if (res.data.checkout_date) localStorage.setItem(`hotel_checkout_date_${hotelSlug}`, res.data.checkout_date);
-            if (res.data.checkout_time) localStorage.setItem(`hotel_checkout_time_${hotelSlug}`, res.data.checkout_time);
+            if (res.success) {
+                console.log("AuthLogic: Manual verify successful");
+                localStorage.setItem(`hotel_room_${hotelSlug}`, roomNumber);
+                localStorage.setItem(`hotel_pin_${hotelSlug}`, pin);
+                if (res.data.checkout_date) localStorage.setItem(`hotel_checkout_date_${hotelSlug}`, res.data.checkout_date);
+                if (res.data.checkout_time) localStorage.setItem(`hotel_checkout_time_${hotelSlug}`, res.data.checkout_time);
 
-            setCheckoutDate(res.data.checkout_date || "");
-            setCheckoutTime(res.data.checkout_time || "");
-            setIsVerified(true);
-        } else {
-            setError("Invalid Room Number or PIN. Please check with reception.");
-            setPin("");
+                setCheckoutDate(res.data.checkout_date || "");
+                setCheckoutTime(res.data.checkout_time || "");
+                setIsVerified(true);
+            } else {
+                console.warn("AuthLogic: Manual verify failed");
+                setError("Invalid Room Number or PIN. Please check with reception.");
+                setPin("");
+            }
+        } catch (err) {
+            console.error("AuthLogic: Manual verify error", err);
+            setError("Connection error. Please try again.");
         }
         setIsVerifying(false);
     };
