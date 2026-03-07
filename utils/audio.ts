@@ -25,32 +25,31 @@ export const startAdminAlert = () => {
     if (isAdminAlerting || !audioContext) return;
     isAdminAlerting = true;
 
-    // A louder, continuous obnoxious buzzer
-    const osc1 = audioContext.createOscillator();
-    const osc2 = audioContext.createOscillator();
+    // A discrete, premium pulsing chime (E major triad)
+    const freqs = [329.63, 415.30, 493.88]; // E4, G#4, B4
+    const oscillators: OscillatorNode[] = [];
     const gainNode = audioContext.createGain();
 
-    // Sawtooth and square waves mixed for harshness
-    osc1.type = "sawtooth";
-    osc2.type = "square";
+    freqs.forEach(freq => {
+        const osc = audioContext!.createOscillator();
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(freq, audioContext!.currentTime);
+        osc.connect(gainNode);
+        osc.start();
+        oscillators.push(osc);
+    });
 
-    // Frequencies (A4 slightly detuned)
-    osc1.frequency.setValueAtTime(440, audioContext.currentTime);
-    osc2.frequency.setValueAtTime(443, audioContext.currentTime);
+    // Create a periodic pulsing gain envelope (on for 0.4s, off for 0.6s)
+    const now = audioContext.currentTime;
+    for (let i = 0; i < 300; i++) { // Pulse for 5 mins max
+        const pulseStart = now + (i * 1.0);
+        gainNode.gain.setTargetAtTime(0.4, pulseStart, 0.05);
+        gainNode.gain.setTargetAtTime(0, pulseStart + 0.4, 0.05);
+    }
 
-    // Quick fade in so it doesn't pop speakers
-    gainNode.gain.setValueAtTime(0, audioContext.currentTime);
-    gainNode.gain.linearRampToValueAtTime(0.5, audioContext.currentTime + 0.1);
-
-    osc1.connect(gainNode);
-    osc2.connect(gainNode);
     gainNode.connect(audioContext.destination);
 
-    // Run continuously until stopped
-    osc1.start();
-    osc2.start();
-
-    activeAdminOscillators = [osc1, osc2];
+    activeAdminOscillators = oscillators;
     activeAdminGain = gainNode;
 };
 
