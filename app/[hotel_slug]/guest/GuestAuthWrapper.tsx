@@ -44,6 +44,8 @@ function AuthLogic({ children }: { children: React.ReactNode }) {
         const urlPin = searchParams?.get("pin");
         const storedRoom = localStorage.getItem(`hotel_room_${hotelSlug}`);
         const storedPin = localStorage.getItem(`hotel_pin_${hotelSlug}`);
+        const storedCheckoutDate = localStorage.getItem(`hotel_checkout_date_${hotelSlug}`);
+        const storedCheckoutTime = localStorage.getItem(`hotel_checkout_time_${hotelSlug}`);
 
         const effectiveRoom = urlRoom || storedRoom;
         let effectivePin = storedPin;
@@ -57,9 +59,12 @@ function AuthLogic({ children }: { children: React.ReactNode }) {
 
         if (effectiveRoom) {
             setRoomNumber(effectiveRoom);
+            if (storedCheckoutDate) setCheckoutDate(storedCheckoutDate);
+            if (storedCheckoutTime) setCheckoutTime(storedCheckoutTime);
 
             if (effectivePin) {
                 console.log(`AuthLogic: Attempting auto-verify for Room ${effectiveRoom}`);
+                setPin(effectivePin);
                 setIsVerifying(true);
                 verifyBookingPin(branding.id, effectiveRoom, effectivePin).then(res => {
                     if (res.success) {
