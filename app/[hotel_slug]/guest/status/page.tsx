@@ -49,107 +49,157 @@ export default function StatusPage() {
         prevRequestsRef.current = requests;
     }, [requests]);
 
+    const getRequestTheme = (type: string) => {
+        const t = type.toLowerCase();
+        if (t.includes("water")) return {
+            bg: "bg-blue-50/80",
+            border: "border-blue-100",
+            text: "text-blue-900",
+            accent: "bg-blue-500",
+            light: "bg-blue-500/10",
+            muted: "text-blue-400"
+        };
+        if (t.includes("dining") || t.includes("food") || t.includes("order")) return {
+            bg: "bg-red-50/80",
+            border: "border-red-100",
+            text: "text-red-900",
+            accent: "bg-[#E31837]",
+            light: "bg-red-500/10",
+            muted: "text-red-400"
+        };
+        if (t.includes("laundry") || t.includes("valet")) return {
+            bg: "bg-indigo-50/80",
+            border: "border-indigo-100",
+            text: "text-indigo-900",
+            accent: "bg-indigo-600",
+            light: "bg-indigo-500/10",
+            muted: "text-indigo-400"
+        };
+        if (t.includes("cleaning") || t.includes("housekeeping")) return {
+            bg: "bg-emerald-50/80",
+            border: "border-emerald-100",
+            text: "text-emerald-900",
+            accent: "bg-emerald-600",
+            light: "bg-emerald-500/10",
+            muted: "text-emerald-400"
+        };
+        // Default theme
+        return {
+            bg: "bg-slate-50/80",
+            border: "border-slate-100",
+            text: "text-slate-900",
+            accent: "bg-slate-900",
+            light: "bg-slate-500/10",
+            muted: "text-slate-400"
+        };
+    };
+
     const activeRequests = requests.filter((r) => r.status !== "Completed");
     const pastRequests = requests.filter((r) => r.status === "Completed");
 
     return (
-        <div className="pb-40 section-padding pt-10 min-h-screen bg-background text-foreground">
+        <div className="pb-40 section-padding pt-10 min-h-screen bg-[#FDFDFD] text-slate-900">
             <div className="flex items-center justify-between mb-10">
-                <button onClick={() => router.back()} className="w-10 h-10 rounded-full glass flex items-center justify-center shadow-sm active:scale-90 transition-transform border border-white/5">
-                    <ArrowLeft className="w-5 h-5 text-foreground" />
+                <button onClick={() => router.back()} className="w-12 h-12 rounded-2xl bg-white flex items-center justify-center shadow-lg border border-slate-100 active:scale-90 transition-transform">
+                    <ArrowLeft className="w-6 h-6 text-slate-900" />
                 </button>
-                <h1 className="text-2xl font-serif text-foreground">Live Status</h1>
-                <div className="w-10"></div>
+                <h1 className="text-2xl font-black uppercase tracking-tighter italic">Order <span className="text-[#E31837]">Status</span></h1>
+                <div className="w-12"></div>
             </div>
 
             <div className="mb-14">
-                <div className="flex items-center justify-between mb-8">
-                    <h2 className="text-[10px] font-black text-foreground/40 uppercase tracking-[0.25em]">Active Requests</h2>
+                <div className="flex items-center justify-between mb-8 px-1">
+                    <h2 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.25em]">Live Pulse</h2>
                     {activeRequests.length > 0 && (
-                        <span className="flex items-center text-[9px] font-black text-amber-500 bg-amber-500/10 px-3 py-1 rounded-xl uppercase tracking-wider border border-amber-500/10">
-                            <RefreshCcw className="w-3 h-3 mr-1.5 animate-spin" /> Concierge Monitoring
+                        <span className="flex items-center text-[9px] font-black text-[#E31837] bg-red-50 px-3 py-1.5 rounded-xl uppercase tracking-wider border border-red-100 shadow-sm animate-pulse">
+                            <RefreshCcw className="w-3 h-3 mr-1.5 animate-spin-slow" /> Tracking Live
                         </span>
                     )}
                 </div>
 
                 {activeRequests.length > 0 ? (
                     <div className="space-y-6">
-                        {activeRequests.map((req) => (
-                            <motion.div
-                                key={req.id}
-                                layout
-                                initial={{ opacity: 0, scale: 0.95 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                className="glass-dark p-8 rounded-[2.5rem] shadow-2xl shadow-black/10 border border-white/5 relative overflow-hidden group"
-                            >
-                                {/* Luxury Progress Indicator */}
-                                {req.status === "Pending" && (
-                                    <div className="absolute top-0 left-0 w-full h-1 bg-amber-50">
+                        {activeRequests.map((req) => {
+                            const theme = getRequestTheme(req.type);
+                            return (
+                                <motion.div
+                                    key={req.id}
+                                    layout
+                                    initial={{ opacity: 0, scale: 0.95 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    className={`${theme.bg} ${theme.border} border-2 p-8 rounded-[2.5rem] shadow-[0_20px_40px_-15px_rgba(0,0,0,0.05)] relative overflow-hidden group backdrop-blur-md`}
+                                >
+                                    {/* Progress Strip */}
+                                    <div className="absolute top-0 left-0 w-full h-1.5 bg-white/50 overflow-hidden">
                                         <motion.div
                                             animate={{ x: ['-100%', '100%'] }}
-                                            transition={{ repeat: Infinity, duration: 2.5, ease: "linear" }}
-                                            className="w-1/3 h-full bg-amber-400"
+                                            transition={{
+                                                repeat: Infinity,
+                                                duration: req.status === "Pending" ? 3 : 2,
+                                                ease: "linear"
+                                            }}
+                                            className={`w-1/2 h-full ${theme.accent}`}
                                         />
                                     </div>
-                                )}
-                                {req.status === "In Progress" && (
-                                    <div className="absolute top-0 left-0 w-full h-1 bg-blue-50">
-                                        <motion.div
-                                            animate={{ x: ['-100%', '100%'] }}
-                                            transition={{ repeat: Infinity, duration: 2, ease: "linear" }}
-                                            className="w-1/2 h-full bg-blue-500"
-                                        />
-                                    </div>
-                                )}
 
-                                <div className="flex items-start justify-between">
-                                    <div className="flex-1 pr-6">
-                                        <h3 className="font-serif text-xl text-white mb-2">{req.type}</h3>
-                                        <div className="flex items-center text-[10px] text-white/40 font-black uppercase tracking-[0.2em]">
-                                            <Clock className="w-3 h-3 mr-1.5" />
-                                            {req.time} <span className="mx-2 opacity-20">•</span> Room {req.room}
+                                    <div className="flex items-start justify-between">
+                                        <div className="flex-1 pr-6">
+                                            <div className="flex items-center mb-1">
+                                                <div className={`w-2 h-2 rounded-full ${theme.accent} mr-2`} />
+                                                <h3 className={`font-black text-2xl ${theme.text} uppercase tracking-tighter italic`}>{req.type}</h3>
+                                            </div>
+                                            <div className="flex items-center text-[11px] text-slate-400 font-bold uppercase tracking-tight">
+                                                <Clock className="w-3.5 h-3.5 mr-1.5 opacity-50" />
+                                                Received {req.time} <span className="mx-2 opacity-20">•</span> Room {req.room}
+                                            </div>
                                         </div>
+                                        <StatusBadge status={req.status as any} />
                                     </div>
-                                    <StatusBadge status={req.status as any} />
-                                </div>
-                                {req.notes && (
-                                    <div className="mt-6 pt-6 border-t border-white/5">
-                                        <p className="text-sm text-white/60 font-medium italic opacity-70 leading-relaxed">
-                                            "{req.notes}"
-                                        </p>
-                                    </div>
-                                )}
-                            </motion.div>
-                        ))}
+
+                                    {req.notes && (
+                                        <div className="mt-8 pt-6 border-t border-slate-200/50">
+                                            <p className={`text-[13px] ${theme.text} font-bold opacity-60 leading-relaxed uppercase tracking-tighter`}>
+                                                &ldquo;{req.notes}&rdquo;
+                                            </p>
+                                        </div>
+                                    )}
+
+                                    {/* Abstract Decorative Element */}
+                                    <div className={`absolute -right-4 -bottom-4 w-24 h-24 ${theme.accent} opacity-5 blur-3xl rounded-full`} />
+                                </motion.div>
+                            );
+                        })}
                     </div>
                 ) : (
                     <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
-                        className="glass border-2 border-dashed border-white/5 rounded-[3rem] py-24 text-center"
+                        className="bg-white border-2 border-dashed border-slate-100 rounded-[3.5rem] py-32 text-center shadow-inner"
                     >
-                        <Sparkles className="w-12 h-12 text-foreground/10 mx-auto mb-6 opacity-50" />
-                        <p className="text-foreground/40 font-serif text-lg">No active signals at the moment.</p>
-                        <p className="text-foreground/20 text-[10px] font-black uppercase tracking-widest mt-2">All requests fulfilled</p>
+                        < Sparkles className="w-16 h-16 text-slate-200 mx-auto mb-6" />
+                        <p className="text-slate-900 font-black text-xl uppercase italic tracking-tighter">Everything Is Perfect</p>
+                        <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest mt-2">No active requests found</p>
                     </motion.div>
                 )}
             </div>
 
             <div>
-                <h2 className="text-[10px] font-black text-foreground/40 uppercase tracking-[0.25em] mb-8">Arrival & Fulfilment</h2>
+                <h2 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.25em] mb-8 px-1">Completed Journeys</h2>
                 <div className="space-y-4">
                     {pastRequests.map((req) => (
-                        <div key={req.id} className="bg-white/5 p-6 rounded-[2rem] border border-white/5 flex items-center justify-between opacity-60 group hover:opacity-100 transition-all duration-500">
+                        <div key={req.id} className="bg-white p-6 rounded-[2.5rem] border border-slate-100 flex items-center justify-between opacity-60 hover:opacity-100 transition-all duration-500 shadow-sm group">
                             <div className="flex items-center">
-                                <div className="w-12 h-12 rounded-2xl glass text-emerald-500 flex items-center justify-center mr-5 shadow-sm">
-                                    <CheckCircle2 className="w-6 h-6" />
+                                <div className="w-14 h-14 rounded-2xl bg-emerald-50 text-emerald-500 flex items-center justify-center mr-5 shadow-sm border border-emerald-100 transition-transform group-hover:scale-110">
+                                    <CheckCircle2 className="w-7 h-7" />
                                 </div>
                                 <div>
-                                    <h3 className="font-serif text-lg text-foreground">{req.type}</h3>
-                                    <p className="text-[9px] text-foreground/40 font-black uppercase tracking-[0.15em] mt-1">{req.time}</p>
+                                    <h3 className="font-black text-lg text-slate-900 uppercase tracking-tighter italic leading-none">{req.type}</h3>
+                                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tight mt-1">{req.time}</p>
                                 </div>
                             </div>
-                            <span className="text-[9px] font-black text-foreground/20 uppercase tracking-widest">Completed</span>
+                            <div className="flex flex-col items-end">
+                                <span className="text-[10px] font-black text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full uppercase tracking-tighter italic border border-emerald-100">Delivered</span>
+                            </div>
                         </div>
                     ))}
                 </div>
