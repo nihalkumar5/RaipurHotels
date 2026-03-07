@@ -136,6 +136,50 @@ export default function GuestDashboard() {
                 </motion.div>
             )}
 
+            {/* Wi-Fi Quick Access Card */}
+            {(branding?.wifiName || branding?.wifiPassword) && (
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.25 }}
+                    className="mb-8 bg-white rounded-[2rem] p-6 border border-slate-100 shadow-sm relative overflow-hidden group"
+                >
+                    <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+                        <Wifi className="w-24 h-24" />
+                    </div>
+                    <div className="relative z-10">
+                        <div className="flex items-center mb-4">
+                            <div className="w-8 h-8 rounded-xl bg-blue-50 flex items-center justify-center mr-3" style={{ backgroundColor: `${branding?.primaryColor}15`, color: branding?.primaryColor }}>
+                                <Wifi className="w-4 h-4" />
+                            </div>
+                            <h3 className="font-black text-slate-800 tracking-tight">Property Wi-Fi</h3>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Network</p>
+                                <p className="font-bold text-slate-900 truncate">{branding.wifiName || "Guest_WiFi"}</p>
+                            </div>
+                            <div>
+                                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Password</p>
+                                <div className="flex items-center">
+                                    <p className="font-mono font-bold text-slate-800 mr-2">{branding.wifiPassword || "Relax123"}</p>
+                                    <button
+                                        onClick={() => {
+                                            navigator.clipboard.writeText(branding.wifiPassword || "Relax123");
+                                            alert("Password copied!");
+                                        }}
+                                        className="text-[10px] font-black text-blue-600 uppercase tracking-widest hover:underline"
+                                        style={{ color: branding?.primaryColor }}
+                                    >
+                                        Copy
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </motion.div>
+            )}
+
             <motion.div
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
