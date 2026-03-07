@@ -32,6 +32,7 @@ export default function GuestDashboard() {
 
     const [currentOfferIndex, setCurrentOfferIndex] = useState(0);
     const [scrolled, setScrolled] = useState(false);
+    const [showTeaOptions, setShowTeaOptions] = useState(false);
 
     const [submittingType, setSubmittingType] = React.useState<string | null>(null);
     const [toast, setToast] = React.useState<{ message: string; type: "success" | "error"; isVisible: boolean }>({
@@ -324,40 +325,93 @@ export default function GuestDashboard() {
                             { label: "Room Cleaning", icon: <Sparkles />, notes: "Full Service", type: "Cleaning", color: "from-emerald-500/10" },
                             { label: "Tea/Coffee", icon: <Coffee />, notes: "Hot Beverage", type: "TeaCoffee", color: "from-amber-500/10" },
                         ].map((req, i) => (
-                            <button
-                                key={i}
-                                onClick={() => handleQuickRequest(req.type, req.notes)}
-                                className={`bg-slate-900 p-6 rounded-[2.5rem] flex flex-col justify-end min-h-[125px] border border-slate-800 shadow-2xl hover:shadow-amber-900/10 hover:border-amber-500/30 transition-all duration-500 active:scale-95 group relative overflow-hidden text-left`}
-                            >
-                                {/* Subtle Glow Overlay */}
-                                <div className={`absolute inset-0 bg-gradient-to-br ${req.color} to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700`}></div>
+                            <div key={i} className="relative group">
+                                <AnimatePresence mode="wait">
+                                    {req.type === "TeaCoffee" && showTeaOptions ? (
+                                        <motion.div
+                                            key="options"
+                                            initial={{ opacity: 0, scale: 0.95 }}
+                                            animate={{ opacity: 1, scale: 1 }}
+                                            exit={{ opacity: 0, scale: 0.95 }}
+                                            className="bg-slate-900 p-4 rounded-[2.5rem] flex flex-col justify-between min-h-[125px] border border-amber-500/50 shadow-2xl relative overflow-hidden"
+                                        >
+                                            <div className="flex justify-between items-center mb-2">
+                                                <p className="text-[10px] font-black text-amber-500 uppercase tracking-widest pl-2">Choose One</p>
+                                                <button
+                                                    onClick={() => setShowTeaOptions(false)}
+                                                    className="p-1.5 hover:bg-white/10 rounded-full transition-colors text-slate-400"
+                                                >
+                                                    <AlertCircle className="w-4 h-4 rotate-45" />
+                                                </button>
+                                            </div>
+                                            <div className="grid grid-cols-1 gap-2">
+                                                <button
+                                                    onClick={() => {
+                                                        handleQuickRequest("Tea", "Fresh tea service");
+                                                        setShowTeaOptions(false);
+                                                    }}
+                                                    className="w-full py-2 bg-white/5 hover:bg-white/10 rounded-xl text-white text-xs font-bold transition-all flex items-center justify-center border border-white/5"
+                                                >
+                                                    <Coffee className="w-3 h-3 mr-2 text-amber-500" /> Tea
+                                                </button>
+                                                <button
+                                                    onClick={() => {
+                                                        handleQuickRequest("Coffee", "Fresh coffee service");
+                                                        setShowTeaOptions(false);
+                                                    }}
+                                                    className="w-full py-2 bg-white/5 hover:bg-white/10 rounded-xl text-white text-xs font-bold transition-all flex items-center justify-center border border-white/5"
+                                                >
+                                                    <Coffee className="w-3 h-3 mr-2 text-amber-500" /> Coffee
+                                                </button>
+                                            </div>
+                                        </motion.div>
+                                    ) : (
+                                        <motion.button
+                                            key="button"
+                                            initial={{ opacity: 0 }}
+                                            animate={{ opacity: 1 }}
+                                            exit={{ opacity: 0 }}
+                                            onClick={() => {
+                                                if (req.type === "TeaCoffee") {
+                                                    setShowTeaOptions(true);
+                                                } else {
+                                                    handleQuickRequest(req.type, req.notes);
+                                                }
+                                            }}
+                                            className={`w-full bg-slate-900 p-6 rounded-[2.5rem] flex flex-col justify-end min-h-[125px] border border-slate-800 shadow-2xl hover:shadow-amber-900/10 hover:border-amber-500/30 transition-all duration-500 active:scale-95 group relative overflow-hidden text-left`}
+                                        >
+                                            {/* Subtle Glow Overlay */}
+                                            <div className={`absolute inset-0 bg-gradient-to-br ${req.color} to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700`}></div>
 
-                                {/* Premium Shine Effect */}
-                                <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-[1.5s]"></div>
+                                            {/* Premium Shine Effect */}
+                                            <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-[1.5s]"></div>
 
-                                {/* Background Icon (Subtle Watermark) */}
-                                <div className="absolute top-4 right-4 text-white opacity-[0.05] group-hover:opacity-[0.1] group-hover:-translate-y-1 group-hover:translate-x-1 transition-all duration-700">
-                                    {renderIcon(req.icon, "w-16 h-16")}
-                                </div>
+                                            {/* Background Icon (Subtle Watermark) */}
+                                            <div className="absolute top-4 right-4 text-white opacity-[0.05] group-hover:opacity-[0.1] group-hover:-translate-y-1 group-hover:translate-x-1 transition-all duration-700">
+                                                {renderIcon(req.icon, "w-16 h-16")}
+                                            </div>
 
-                                {/* Gold Accent Indicator */}
-                                <div className={`absolute top-6 left-6 w-1 h-3 rounded-full transition-all duration-500 ${submittingType === req.type ? "bg-amber-500 animate-pulse opacity-100" : "bg-amber-500 opacity-0 group-hover:opacity-100 group-hover:-translate-y-1"}`}></div>
+                                            {/* Gold Accent Indicator */}
+                                            <div className={`absolute top-6 left-6 w-1 h-3 rounded-full transition-all duration-500 ${submittingType === req.type ? "bg-amber-500 animate-pulse opacity-100" : "bg-amber-500 opacity-0 group-hover:opacity-100 group-hover:-translate-y-1"}`}></div>
 
-                                <div className="relative z-10 w-full">
-                                    <div className="flex items-center justify-between w-full">
-                                        <div>
-                                            <p className="text-lg font-serif text-white leading-tight group-hover:translate-x-1 transition-transform duration-300">{req.label}</p>
-                                            <p className="text-[9px] font-black text-slate-400 mt-1 uppercase tracking-widest group-hover:translate-x-1 transition-transform duration-500">{req.notes}</p>
-                                        </div>
-                                        {submittingType === req.type && (
-                                            <div className="w-5 h-5 border-2 border-white/20 border-t-amber-500 rounded-full animate-spin"></div>
-                                        )}
-                                    </div>
-                                </div>
+                                            <div className="relative z-10 w-full">
+                                                <div className="flex items-center justify-between w-full">
+                                                    <div>
+                                                        <p className="text-lg font-serif text-white leading-tight group-hover:translate-x-1 transition-transform duration-300">{req.label}</p>
+                                                        <p className="text-[9px] font-black text-slate-400 mt-1 uppercase tracking-widest group-hover:translate-x-1 transition-transform duration-500">{req.notes}</p>
+                                                    </div>
+                                                    {submittingType === req.type && (
+                                                        <div className="w-5 h-5 border-2 border-white/20 border-t-amber-500 rounded-full animate-spin"></div>
+                                                    )}
+                                                </div>
+                                            </div>
 
-                                {/* Bottom Accent Line (Branded Gold) */}
-                                <div className="absolute bottom-0 left-0 w-0 h-1 bg-gradient-to-r from-amber-500 to-amber-600 group-hover:w-full transition-all duration-700"></div>
-                            </button>
+                                            {/* Bottom Accent Line (Branded Gold) */}
+                                            <div className="absolute bottom-0 left-0 w-0 h-1 bg-gradient-to-r from-amber-500 to-amber-600 group-hover:w-full transition-all duration-700"></div>
+                                        </motion.button>
+                                    )}
+                                </AnimatePresence>
+                            </div>
                         ))}
                     </div>
                 </motion.section>
