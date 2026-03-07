@@ -200,20 +200,6 @@ export default function GuestDashboard() {
                         </div>
                     </div>
 
-                    {/* Decorative Divider */}
-                    <div className="h-[1px] w-full bg-gradient-to-r from-transparent via-slate-200/50 to-transparent mb-6"></div>
-
-                    {/* Status Indicators at Bottom */}
-                    <div className="flex items-center space-x-6">
-                        <div className="flex items-center">
-                            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-2.5 shadow-[0_0_8px_rgba(16,185,129,0.5)] animate-pulse"></div>
-                            <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Concierge Online</span>
-                        </div>
-                        <div className="flex items-center">
-                            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-2.5 shadow-[0_0_8px_rgba(16,185,129,0.5)]"></div>
-                            <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Secure Access</span>
-                        </div>
-                    </div>
                 </div>
             </motion.div>
 
