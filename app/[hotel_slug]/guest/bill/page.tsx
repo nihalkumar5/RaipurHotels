@@ -11,15 +11,19 @@ export default function BillPage() {
     const router = useRouter();
     const params = useParams();
     const hotelSlug = params?.hotel_slug as string;
+    const { roomNumber, checkedInAt } = useGuestRoom();
     const { branding } = useHotelBranding(hotelSlug);
-    const requests = useSupabaseRequests(branding?.id);
-    const { roomNumber } = useGuestRoom();
+    const requests = useSupabaseRequests(branding?.id, roomNumber, checkedInAt);
 
     const [isCheckingOut, setIsCheckingOut] = useState(false);
     const [checkoutComplete, setCheckoutComplete] = useState(false);
 
-    // Filter requests for the current room
-    const roomRequests = requests.filter(r => r.room === roomNumber && (r.price || 0) > 0);
+    // Filter requests for the current room and session
+    const roomRequests = requests.filter(r =>
+        r.room === roomNumber &&
+        (r.price || 0) > 0 &&
+        (!checkedInAt || r.timestamp >= checkedInAt)
+    );
     const totalAmount = roomRequests.reduce((sum, r) => sum + (r.total || 0), 0);
     const taxAmount = totalAmount * 0.12; // 12% mock tax
     const grandTotal = totalAmount + taxAmount;
