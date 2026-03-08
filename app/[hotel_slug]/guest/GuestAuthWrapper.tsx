@@ -33,12 +33,13 @@ function AuthLogic({ children }: { children: React.ReactNode }) {
 
     useEffect(() => {
         const timestamp = new Date().toLocaleTimeString();
-        console.log(`[${timestamp}] AuthLogic: Lifecycle Update. Loading: ${brandingLoading}, BrandingID: ${branding?.id}`);
-
-        if (brandingLoading) return;
+        if (brandingLoading || !hotelSlug) {
+            console.log(`[${timestamp}] AuthLogic: Waiting for branding or slug...`);
+            return;
+        }
 
         if (!branding?.id) {
-            console.warn(`[${timestamp}] AuthLogic: No branding ID found.`);
+            console.warn(`[${timestamp}] AuthLogic: Branding loaded but no ID found for slug "${hotelSlug}".`);
             setIsVerified(false);
             return;
         }
@@ -59,10 +60,10 @@ function AuthLogic({ children }: { children: React.ReactNode }) {
         });
 
         const effectiveRoom = urlRoom || storedRoom;
-        let effectivePin = storedPin;
+        let effectivePin = urlPin || storedPin; // URL PIN should always win if present
 
         if (urlRoom && urlRoom !== storedRoom) {
-            console.log(`[${timestamp}] AuthLogic: Room switched. URL wins.`);
+            console.log(`[${timestamp}] AuthLogic: Room switched in URL. prioritizing URL PIN.`);
             effectivePin = urlPin || "";
         }
 
@@ -82,16 +83,17 @@ function AuthLogic({ children }: { children: React.ReactNode }) {
                         setCheckoutDate(res.data.checkout_date || "");
                         setCheckoutTime(res.data.checkout_time || "");
                         localStorage.setItem(`hotel_room_${hotelSlug}`, effectiveRoom);
-                        localStorage.setItem(`hotel_pin_${hotelSlug}`, effectivePin);
+                        localStorage.setItem(`hotel_pin_${hotelSlug}`, effectivePin!);
                         if (res.data.checkout_date) localStorage.setItem(`hotel_checkout_date_${hotelSlug}`, res.data.checkout_date);
                         if (res.data.checkout_time) localStorage.setItem(`hotel_checkout_time_${hotelSlug}`, res.data.checkout_time);
                     } else {
-                        console.warn(`[${timestamp}] AuthLogic: VERIFICATION FAILED. clearing credentials.`);
+                        console.warn(`[${timestamp}] AuthLogic: VERIFICATION FAILED.`);
                         console.log(`[${timestamp}] AuthLogic: Reason: ${!res.success ? "Database mismatch or room not occupied" : "Empty data"}`);
 
-                        // ONLY clear if we actually expected this room/pin to work
-                        if (effectiveRoom === storedRoom && effectivePin === storedPin) {
-                            console.log(`[${timestamp}] AuthLogic: Persistence Cleared.`);
+                        // ONLY clear if we explicitly got a failure from DB (not just a null/empty state)
+                        // This prevents wiping on transient network errors
+                        if (res.success === false && effectiveRoom === storedRoom) {
+                            console.log(`[${timestamp}] AuthLogic: PIN specifically rejected. clearing credentials.`);
                             localStorage.removeItem(`hotel_room_${hotelSlug}`);
                             localStorage.removeItem(`hotel_pin_${hotelSlug}`);
                             localStorage.removeItem(`hotel_checkout_date_${hotelSlug}`);
@@ -101,8 +103,9 @@ function AuthLogic({ children }: { children: React.ReactNode }) {
                     }
                     setIsVerifying(false);
                 }).catch(err => {
-                    console.error(`[${timestamp}] AuthLogic: CRASH during verify`, err);
-                    setIsVerified(false);
+                    console.error(`[${timestamp}] AuthLogic: ERROR during verify. Retaining credentials for retry.`, err);
+                    // Do not set isVerified false yet, maybe try again?
+                    // But for now, just stop the loader
                     setIsVerifying(false);
                 });
             } else {
