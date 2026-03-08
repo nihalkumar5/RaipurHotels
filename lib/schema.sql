@@ -18,6 +18,10 @@ CREATE TABLE IF NOT EXISTS hotels (
     lunch_end TEXT DEFAULT '15:30',
     dinner_start TEXT DEFAULT '19:00',
     dinner_end TEXT DEFAULT '22:30',
+    late_checkout_phone TEXT,
+    late_checkout_charge_1 TEXT DEFAULT 'Complimentary',
+    late_checkout_charge_2 TEXT DEFAULT '₹1,500',
+    late_checkout_charge_3 TEXT DEFAULT 'Full Day Rate',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
@@ -55,6 +59,19 @@ CREATE TABLE IF NOT EXISTS rooms (
     UNIQUE(hotel_id, room_number)
 );
 
+-- 3b. Guests (Current Occupants)
+CREATE TABLE IF NOT EXISTS guests (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    hotel_id UUID REFERENCES hotels(id) ON DELETE CASCADE,
+    name TEXT NOT NULL,
+    phone TEXT NOT NULL,
+    room_number TEXT NOT NULL,
+    check_in_date TEXT NOT NULL,
+    check_out_date TEXT,
+    status TEXT DEFAULT 'active', -- 'active' | 'checked_out' | 'deleted'
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
 -- 4. Requests (Guest Services & Orders)
 CREATE TABLE IF NOT EXISTS requests (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -75,12 +92,14 @@ CREATE TABLE IF NOT EXISTS requests (
 CREATE INDEX IF NOT EXISTS idx_requests_hotel_id ON requests(hotel_id);
 CREATE INDEX IF NOT EXISTS idx_hotels_slug ON hotels(slug);
 CREATE INDEX IF NOT EXISTS idx_profiles_user_id ON profiles(user_id);
+CREATE INDEX IF NOT EXISTS idx_guests_hotel_id ON guests(hotel_id);
 
 -- Enable Row Level Security (RLS)
 ALTER TABLE hotels ENABLE ROW LEVEL SECURITY;
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE rooms ENABLE ROW LEVEL SECURITY;
 ALTER TABLE requests ENABLE ROW LEVEL SECURITY;
+ALTER TABLE guests ENABLE ROW LEVEL SECURITY;
 
 -- 1. Hotels Policies
 DROP POLICY IF EXISTS "Public hotels are viewable by everyone" ON hotels;
@@ -90,6 +109,16 @@ CREATE POLICY "Public hotels are viewable by everyone" ON hotels
 DROP POLICY IF EXISTS "Allow anyone to register a hotel" ON hotels;
 CREATE POLICY "Allow anyone to register a hotel" ON hotels 
     FOR INSERT WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Staff can update their hotel branding" ON hotels;
+CREATE POLICY "Staff can update their hotel branding" ON hotels
+    FOR UPDATE USING (
+        EXISTS (
+            SELECT 1 FROM profiles 
+            WHERE profiles.user_id = auth.uid() 
+            AND profiles.hotel_id = hotels.id
+        )
+    );
 
 -- 2. Profiles Policies
 DROP POLICY IF EXISTS "Profiles are viewable by owners" ON profiles;
@@ -140,7 +169,22 @@ CREATE POLICY "Staff can manage requests" ON requests
         )
     );
 
--- 5. Special Offers Policies
+-- 5. Guests Policies
+DROP POLICY IF EXISTS "Staff can manage guests" ON guests;
+CREATE POLICY "Staff can manage guests" ON guests
+    FOR ALL USING (
+        EXISTS (
+            SELECT 1 FROM profiles 
+            WHERE profiles.user_id = auth.uid() 
+            AND profiles.hotel_id = guests.hotel_id
+        )
+    );
+
+DROP POLICY IF EXISTS "Guests are viewable by everyone" ON guests;
+CREATE POLICY "Guests are viewable by everyone" ON guests
+    FOR SELECT USING (true);
+
+-- 6. Special Offers Policies
 ALTER TABLE special_offers ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "Special offers are viewable by everyone" ON special_offers;
@@ -202,5 +246,14 @@ BEGIN
         AND tablename = 'special_offers'
     ) THEN
         ALTER PUBLICATION supabase_realtime ADD TABLE special_offers;
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_publication_tables 
+        WHERE pubname = 'supabase_realtime' 
+        AND schemaname = 'public' 
+        AND tablename = 'guests'
+    ) THEN
+        ALTER PUBLICATION supabase_realtime ADD TABLE guests;
     END IF;
 END $$;

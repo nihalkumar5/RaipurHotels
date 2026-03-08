@@ -63,7 +63,8 @@ export default function LateCheckoutPage() {
     const handleCall = () => {
         const phone = branding?.lateCheckoutPhone || branding?.receptionPhone;
         if (phone) {
-            window.location.href = `tel:${phone}`;
+            const sanitizedPhone = phone.replace(/[^0-9+]/g, '');
+            window.location.href = `tel:${sanitizedPhone}`;
         }
     };
 

@@ -789,8 +789,14 @@ export async function updateSupabaseRequestStatus(id: string, status: RequestSta
  */
 export async function saveHotelBranding(id: string, updates: Partial<HotelBranding>) {
     if (isDemoMode()) {
-        console.log("Demo Mode: saveHotelBranding called (not persisted yet)", updates);
-        return { data: null, error: null };
+        console.log("Demo Mode: saveHotelBranding called (not persisted)", updates);
+        return {
+            data: null,
+            error: {
+                message: "Application is in Demo Mode. To save real branding changes, please set your Supabase credentials in the .env.local file.",
+                code: "DEMO_MODE"
+            } as any
+        };
     }
 
     const { data, error } = await supabase

@@ -207,62 +207,6 @@ export default function GuestDashboard() {
                 </div>
             </motion.div>
 
-            {/* 5. Dynamic Special Offers Slider */}
-            {(offers.length > 0 || loadingOffers) && (
-                <motion.section variants={item} className="mb-10">
-                    <div className="flex items-center justify-between mb-6">
-                        <h2 className="text-xl font-serif text-slate-900">Exclusive Privileges</h2>
-                        <div className="flex space-x-2">
-                            <button
-                                onClick={() => setCurrentOfferIndex((prev: number) => (prev === 0 ? offers.length - 1 : prev - 1))}
-                                className="w-8 h-8 rounded-full glass flex items-center justify-center text-foreground/40 hover:text-foreground transition-colors"
-                            >
-                                <ChevronLeft className="w-4 h-4" />
-                            </button>
-                            <button
-                                onClick={() => setCurrentOfferIndex((prev: number) => (prev === offers.length - 1 ? 0 : prev + 1))}
-                                className="w-8 h-8 rounded-full glass flex items-center justify-center text-foreground/40 hover:text-foreground transition-colors"
-                            >
-                                <ChevronRight className="w-4 h-4" />
-                            </button>
-                        </div>
-                    </div>
-
-                    <div className="relative aspect-[16/9] rounded-[2.5rem] overflow-hidden group">
-                        {loadingOffers ? (
-                            <div className="w-full h-full glass animate-pulse flex items-center justify-center">
-                                <div className="w-8 h-8 border-2 border-foreground/10 border-t-foreground/40 rounded-full animate-spin"></div>
-                            </div>
-                        ) : (
-                            <AnimatePresence mode="wait">
-                                <motion.div
-                                    key={currentOfferIndex}
-                                    initial={{ opacity: 0, x: 20 }}
-                                    animate={{ opacity: 1, x: 0 }}
-                                    exit={{ opacity: 0, x: -20 }}
-                                    className="relative w-full h-full"
-                                >
-                                    <img
-                                        src={offers[currentOfferIndex]?.image_url || "https://images.unsplash.com/photo-1544161515-4ae6ce6db87e?auto=format&fit=crop&q=80"}
-                                        alt={offers[currentOfferIndex]?.title}
-                                        className="w-full h-full object-cover"
-                                    />
-                                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent flex flex-col justify-end p-8">
-                                        <h3 className="text-2xl font-serif text-white mb-2">{offers[currentOfferIndex]?.title}</h3>
-                                        <p className="text-white/60 text-sm font-medium max-w-xs">{offers[currentOfferIndex]?.description}</p>
-                                        <div className="mt-6">
-                                            <button className="px-6 py-2.5 bg-white rounded-full text-[10px] font-black uppercase tracking-widest text-black hover:bg-amber-500 transition-colors">
-                                                Claim Privilege
-                                            </button>
-                                        </div>
-                                    </div>
-                                </motion.div>
-                            </AnimatePresence>
-                        )}
-                    </div>
-                </motion.section>
-            )
-            }
 
             <motion.div
                 variants={container}
@@ -285,7 +229,8 @@ export default function GuestDashboard() {
                                     bg: "bg-emerald-600/25 text-emerald-700",
                                     action: () => {
                                         if (branding?.receptionPhone) {
-                                            window.location.href = `tel:${branding.receptionPhone}`;
+                                            const sanitizedPhone = branding.receptionPhone.replace(/[^0-9+]/g, '');
+                                            window.location.href = `tel:${sanitizedPhone}`;
                                         } else {
                                             setToast({
                                                 message: "Reception phone not configured.",
@@ -501,39 +446,66 @@ export default function GuestDashboard() {
                     </div>
                 </motion.section>
 
-                {/* 7. Special Offers */}
-                <motion.section variants={item}>
-                    <div className="flex items-center justify-between mb-6">
-                        <div className="flex items-center">
-                            <Star className="w-4 h-4 text-amber-500 mr-2" />
-                            <h2 className="text-xl font-serif text-foreground">Special Offers</h2>
-                        </div>
-                    </div>
-
-                    <div className="bg-gradient-to-br from-[#4a0404] to-[#630d0d] rounded-[2.5rem] p-8 text-white relative overflow-hidden shadow-[0_20px_50px_rgba(74,4,4,0.3)] border border-white/10 group">
-                        {/* Luxury Decorative Elements */}
-                        <div className="absolute top-0 right-0 p-10 opacity-20 group-hover:scale-110 transition-transform duration-700">
-                            <Sparkles className="w-32 h-32 text-amber-400" />
-                        </div>
-                        <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-amber-500/10 blur-[80px] rounded-full"></div>
-
-                        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-                            <div>
-                                <div className="flex items-center space-x-2 mb-3">
-                                    <div className="px-2 py-0.5 bg-amber-500/20 border border-amber-500/40 rounded-md">
-                                        <span className="text-[8px] font-black uppercase tracking-[0.2em] text-amber-400">Limited Privilege</span>
-                                    </div>
-                                    <div className="w-1 h-1 rounded-full bg-amber-500 animate-pulse"></div>
-                                </div>
-                                <h3 className="text-2xl font-serif text-white mb-2 leading-tight">Luxury Spa Experience</h3>
-                                <p className="text-white/60 text-[11px] font-medium uppercase tracking-[0.25em] leading-relaxed">20% Off All Treatments Today</p>
+                {/* 7. Dynamic Special Offers Slider */}
+                {(offers.length > 0 || loadingOffers) && (
+                    <motion.section variants={item} className="mb-10">
+                        <div className="flex items-center justify-between mb-6">
+                            <h2 className="text-xl font-serif text-slate-900">Special Offers</h2>
+                            <div className="flex space-x-2">
+                                <button
+                                    onClick={() => setCurrentOfferIndex((prev: number) => (prev === 0 ? offers.length - 1 : prev - 1))}
+                                    className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 hover:text-slate-900 transition-colors"
+                                >
+                                    <ChevronLeft className="w-4 h-4" />
+                                </button>
+                                <button
+                                    onClick={() => setCurrentOfferIndex((prev: number) => (prev === offers.length - 1 ? 0 : prev + 1))}
+                                    className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 hover:text-slate-900 transition-colors"
+                                >
+                                    <ChevronRight className="w-4 h-4" />
+                                </button>
                             </div>
-                            <button className="bg-gradient-to-r from-amber-500 to-amber-600 text-black px-8 py-3.5 rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-[0_10px_20px_-5px_rgba(245,158,11,0.4)] active:scale-95 transition-all hover:translate-y-[-2px] hover:shadow-[0_15px_30px_-5px_rgba(245,158,11,0.5)]">
-                                Book Now
-                            </button>
                         </div>
-                    </div>
-                </motion.section>
+
+                        <div className="relative aspect-[16/9] rounded-[2.5rem] overflow-hidden group shadow-xl">
+                            {loadingOffers ? (
+                                <div className="w-full h-full bg-slate-50 animate-pulse flex items-center justify-center">
+                                    <div className="w-8 h-8 border-2 border-slate-200 border-t-slate-900 rounded-full animate-spin"></div>
+                                </div>
+                            ) : (
+                                <AnimatePresence mode="wait">
+                                    <motion.div
+                                        key={currentOfferIndex}
+                                        initial={{ opacity: 0, x: 20 }}
+                                        animate={{ opacity: 1, x: 0 }}
+                                        exit={{ opacity: 0, x: -20 }}
+                                        className="relative w-full h-full"
+                                    >
+                                        <img
+                                            src={offers[currentOfferIndex]?.image_url || "https://images.unsplash.com/photo-1544161515-4ae6ce6db87e?auto=format&fit=crop&q=80"}
+                                            alt={offers[currentOfferIndex]?.title}
+                                            className="w-full h-full object-cover"
+                                        />
+                                        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent flex flex-col justify-end p-8">
+                                            <div className="flex items-center space-x-2 mb-2">
+                                                <div className="px-2 py-0.5 bg-amber-500/20 border border-amber-500/40 rounded-md">
+                                                    <span className="text-[8px] font-black uppercase tracking-[0.2em] text-amber-400">Exclusive Privilege</span>
+                                                </div>
+                                            </div>
+                                            <h3 className="text-2xl font-serif text-white mb-2">{offers[currentOfferIndex]?.title}</h3>
+                                            <p className="text-white/70 text-sm font-medium max-w-xs">{offers[currentOfferIndex]?.description}</p>
+                                            <div className="mt-6">
+                                                <button className="px-8 py-3 bg-gradient-to-r from-amber-500 to-amber-600 rounded-2xl text-[10px] font-black uppercase tracking-widest text-black hover:shadow-lg hover:shadow-amber-500/30 transition-all active:scale-95">
+                                                    Claim Offer
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </motion.div>
+                                </AnimatePresence>
+                            )}
+                        </div>
+                    </motion.section>
+                )}
             </motion.div>
 
             <Toast
