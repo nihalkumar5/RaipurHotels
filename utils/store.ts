@@ -809,10 +809,10 @@ export async function verifyBookingPin(hotelId: string, roomNumber: string, pin:
         .eq('room_number', roomNumber)
         .eq('booking_pin', pin)
         .eq('is_occupied', true)
-        .single();
+        .maybeSingle();
 
-    if (error) {
-        console.error("AuthStore: Supabase PIN verification error:", error.message);
+    if (!data) {
+        console.warn("AuthStore: No matching occupied room found with this PIN.");
         return { success: false, data: null };
     }
     console.log("AuthStore: Supabase PIN verification successful");
