@@ -10,20 +10,27 @@ interface GuestEntryFormProps {
     onClose: () => void;
     branding: HotelBranding;
     onSuccess?: () => void;
+    initialRoomNumber?: string;
 }
 
-export default function GuestEntryForm({ isOpen, onClose, branding, onSuccess }: GuestEntryFormProps) {
+export default function GuestEntryForm({ isOpen, onClose, branding, onSuccess, initialRoomNumber }: GuestEntryFormProps) {
     const [loading, setLoading] = useState(false);
     const [success, setSuccess] = useState(false);
     const [formData, setFormData] = useState({
         name: "",
         phone: "",
-        room_number: "",
+        room_number: initialRoomNumber || "",
         check_in_date: new Date().toISOString().split('T')[0]
     });
 
-    const generateWhatsAppUrl = (name: string, phone: string, room: string) => {
-        const dashboardUrl = `${window.location.origin}/${branding.slug}/guest/dashboard`;
+    React.useEffect(() => {
+        if (isOpen && initialRoomNumber) {
+            setFormData(prev => ({ ...prev, room_number: initialRoomNumber }));
+        }
+    }, [isOpen, initialRoomNumber]);
+
+    const generateWhatsAppUrl = (name: string, phone: string, room: string, pin?: string) => {
+        const dashboardUrl = `${window.location.origin}/${branding.slug}/guest/dashboard${pin ? `?room=${room}&pin=${pin}` : ''}`;
         const defaultMsg = `Hello ${name} 👋\n\nWelcome to ${branding.name}.\n\nYour Room Number: ${room}\n\nYou can order food or request services here:\n${dashboardUrl}\n\nHave a great stay!`;
 
         let message = branding.welcomeMessage || defaultMsg;
@@ -53,7 +60,7 @@ export default function GuestEntryForm({ isOpen, onClose, branding, onSuccess }:
         setLoading(true);
 
         try {
-            const { error } = await addGuest({
+            const { error, pin } = await addGuest({
                 hotel_id: branding.id,
                 name: formData.name,
                 phone: formData.phone,
@@ -66,7 +73,7 @@ export default function GuestEntryForm({ isOpen, onClose, branding, onSuccess }:
             setSuccess(true);
 
             // Trigger WhatsApp
-            const waUrl = generateWhatsAppUrl(formData.name, formData.phone, formData.room_number);
+            const waUrl = generateWhatsAppUrl(formData.name, formData.phone, formData.room_number, pin);
             window.open(waUrl, "_blank");
 
             setTimeout(() => {

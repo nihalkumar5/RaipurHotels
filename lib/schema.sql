@@ -269,3 +269,57 @@ ALTER TABLE hotels ADD COLUMN IF NOT EXISTS late_checkout_phone TEXT;
 ALTER TABLE hotels ADD COLUMN IF NOT EXISTS late_checkout_charge_1 TEXT DEFAULT 'Complimentary';
 ALTER TABLE hotels ADD COLUMN IF NOT EXISTS late_checkout_charge_2 TEXT DEFAULT '₹1,500';
 ALTER TABLE hotels ADD COLUMN IF NOT EXISTS late_checkout_charge_3 TEXT DEFAULT 'Full Day Rate';
+
+-- 8. Menu Items Table
+CREATE TABLE IF NOT EXISTS menu_items (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    hotel_id UUID REFERENCES hotels(id) ON DELETE CASCADE,
+    category TEXT NOT NULL,
+    title TEXT NOT NULL,
+    description TEXT,
+    price DECIMAL(10, 2) NOT NULL,
+    image_url TEXT,
+    is_available BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- 9. Staff Attendance Table
+CREATE TABLE IF NOT EXISTS staff_attendance (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    hotel_id UUID REFERENCES hotels(id) ON DELETE CASCADE,
+    staff_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
+    date DATE NOT NULL,
+    status TEXT NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    UNIQUE(staff_id, date)
+);
+
+-- 10. Security Hardening (RLS)
+ALTER TABLE menu_items ENABLE ROW LEVEL SECURITY;
+ALTER TABLE staff_attendance ENABLE ROW LEVEL SECURITY;
+
+-- Menu Items Policies
+DROP POLICY IF EXISTS "Menu items are viewable by everyone" ON menu_items;
+CREATE POLICY "Menu items are viewable by everyone" ON menu_items FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Staff can manage menu items" ON menu_items;
+CREATE POLICY "Staff can manage menu items" ON menu_items FOR ALL USING (
+    EXISTS (SELECT 1 FROM profiles WHERE profiles.user_id = auth.uid() AND profiles.hotel_id = menu_items.hotel_id)
+);
+
+-- Staff Attendance Policies
+DROP POLICY IF EXISTS "Staff can manage attendance" ON staff_attendance;
+CREATE POLICY "Staff can manage attendance" ON staff_attendance FOR ALL USING (
+    EXISTS (SELECT 1 FROM profiles WHERE profiles.user_id = auth.uid() AND profiles.hotel_id = staff_attendance.hotel_id)
+);
+
+-- 11. Enable Real-time for new tables
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_publication_tables WHERE pubname = 'supabase_realtime' AND tablename = 'menu_items') THEN
+        ALTER PUBLICATION supabase_realtime ADD TABLE menu_items;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_publication_tables WHERE pubname = 'supabase_realtime' AND tablename = 'staff_attendance') THEN
+        ALTER PUBLICATION supabase_realtime ADD TABLE staff_attendance;
+    END IF;
+END $$;

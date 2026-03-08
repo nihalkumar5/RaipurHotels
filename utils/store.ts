@@ -228,7 +228,7 @@ const saveDemoMenu = (hotelId: string, items: MenuItem[]) => {
  * Hook to manage Supabase Auth state
  */
 export function useAuth() {
-    const [user, setUser] = useState<any>(null);
+    const [user, setUser] = useState<any>(null); // Supabase User type is complex, keeping for now or use import
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -382,11 +382,13 @@ export const addGuest = async (guestData: Omit<Guest, 'id' | 'status'>) => {
             throw error;
         }
 
+        let pin = null;
         if (data) {
-            await updateRoomStatus(guestData.hotel_id, guestData.room_number, true);
+            const res = await updateRoomStatus(guestData.hotel_id, guestData.room_number, true);
+            pin = res.pin;
         }
 
-        return { data, error: null };
+        return { data, error: null, pin };
     } catch (err) {
         return { data: null, error: err };
     }
@@ -479,25 +481,36 @@ export const getHotelRooms = async (hotelId: string) => {
 
 export const updateRoomStatus = async (hotelId: string, roomNumber: string, isOccupied: boolean) => {
     try {
-        // First find the room by number and hotel
         const { data: rooms, error: findError } = await supabase
             .from('rooms')
-            .select('id')
+            .select('id, booking_pin')
             .eq('hotel_id', hotelId)
             .eq('room_number', roomNumber);
 
         if (findError) throw findError;
 
         if (rooms && rooms.length > 0) {
+            let pin = rooms[0].booking_pin;
+
+            if (isOccupied && !pin) {
+                pin = Math.floor(1000 + Math.random() * 9000).toString();
+            } else if (!isOccupied) {
+                pin = null;
+            }
+
             const { error: updateError } = await supabase
                 .from('rooms')
-                .update({ is_occupied: isOccupied })
+                .update({
+                    is_occupied: isOccupied,
+                    booking_pin: pin,
+                    checked_in_at: isOccupied ? Date.now() : null
+                })
                 .eq('id', rooms[0].id);
 
-            return { error: updateError };
+            return { error: updateError, pin };
         }
 
-        return { error: 'Room not found' };
+        return { error: 'Room not found', pin: null };
     } catch (err) {
         return { error: err };
     }
@@ -534,71 +547,69 @@ export function useHotelBranding(slug: string | undefined) {
         }
 
         const fetchBranding = async () => {
-            const { data, error } = await supabase
-                .from('hotels')
-                .select('*')
-                .eq('slug', slug)
-                .single();
+            try {
+                const { data, error } = await supabase
+                    .from('hotels')
+                    .select('*')
+                    .eq('slug', slug)
+                    .single();
 
-            if (data) {
-                setBranding({
-                    id: data.id,
-                    slug: data.slug,
-                    name: data.name,
-                    logo: data.logo,
-                    logoImage: data.logo_image,
-                    primaryColor: data.primary_color,
-                    accentColor: data.accent_color,
-                    wifiName: data.wifi_name,
-                    wifiPassword: data.wifi_password,
-                    receptionPhone: data.reception_phone,
-                    breakfastStart: data.breakfast_start,
-                    breakfastEnd: data.breakfast_end,
-                    lunchStart: data.lunch_start,
-                    lunchEnd: data.lunch_end,
-                    dinnerStart: data.dinner_start,
-                    dinnerEnd: data.dinner_end,
-                    lateCheckoutPhone: data.late_checkout_phone,
-                    lateCheckoutCharge1: data.late_checkout_charge_1,
-                    lateCheckoutCharge2: data.late_checkout_charge_2,
-                    lateCheckoutCharge3: data.late_checkout_charge_3,
-                    checkoutMessage: data.checkout_message,
-                    googleReviewLink: data.google_review_link,
-                    welcomeMessage: data.welcome_message,
-                });
-            } else {
-                // Mock branding fallback
-                const demoHotels: Record<string, any> = {
-                    'grand-royale': { id: '00000000-0000-0000-0000-000000000001', name: 'The Grand Royale', primaryColor: '#1e293b', accentColor: '#2563eb' },
-                    'azure-bay': { id: '00000000-0000-0000-0000-000000000002', name: 'Azure Bay Resort', primaryColor: '#0891b2', accentColor: '#0ea5e9' },
-                    'mountain-lodge': { id: '00000000-0000-0000-0000-000000000003', name: 'Mountain Lodge', primaryColor: '#166534', accentColor: '#22c55e' },
-                    'babylon': { id: '00000000-0000-0000-0000-000000000004', name: 'Babylon Raipur', primaryColor: '#1e3a8a', accentColor: '#3b82f6' }
-                };
-
-                if (demoHotels[slug]) {
+                if (data) {
                     setBranding({
-                        ...demoHotels[slug],
-                        slug: slug
+                        id: data.id,
+                        slug: data.slug,
+                        name: data.name,
+                        logo: data.logo,
+                        logoImage: data.logo_image,
+                        primaryColor: data.primary_color,
+                        accentColor: data.accent_color,
+                        wifiName: data.wifi_name,
+                        wifiPassword: data.wifi_password,
+                        receptionPhone: data.reception_phone,
+                        breakfastStart: data.breakfast_start,
+                        breakfastEnd: data.breakfast_end,
+                        lunchStart: data.lunch_start,
+                        lunchEnd: data.lunch_end,
+                        dinnerStart: data.dinner_start,
+                        dinnerEnd: data.dinner_end,
+                        lateCheckoutPhone: data.late_checkout_phone,
+                        lateCheckoutCharge1: data.late_checkout_charge_1,
+                        lateCheckoutCharge2: data.late_checkout_charge_2,
+                        lateCheckoutCharge3: data.late_checkout_charge_3,
+                        checkoutMessage: data.checkout_message,
+                        googleReviewLink: data.google_review_link,
+                        welcomeMessage: data.welcome_message,
                     });
+                } else if (isDemoMode()) {
+                    // Mock branding fallback ONLY in demo mode
+                    const demoHotels: Record<string, any> = {
+                        'grand-royale': { id: '00000000-0000-0000-0000-000000000001', name: 'The Grand Royale', primaryColor: '#1e293b', accentColor: '#2563eb' },
+                        'azure-bay': { id: '00000000-0000-0000-0000-000000000002', name: 'Azure Bay Resort', primaryColor: '#0891b2', accentColor: '#0ea5e9' },
+                        'mountain-lodge': { id: '00000000-0000-0000-0000-000000000003', name: 'Mountain Lodge', primaryColor: '#166534', accentColor: '#22c55e' },
+                        'babylon': { id: '00000000-0000-0000-0000-000000000004', name: 'Babylon Raipur', primaryColor: '#1e3a8a', accentColor: '#3b82f6' }
+                    };
+
+                    if (demoHotels[slug]) {
+                        setBranding({ ...demoHotels[slug], slug: slug });
+                    } else {
+                        setBranding({
+                            id: `demo-${slug}`,
+                            slug: slug,
+                            name: slug.charAt(0).toUpperCase() + slug.slice(1).replace(/-/g, ' '),
+                            primaryColor: '#2563eb',
+                            accentColor: '#3b82f6',
+                            receptionPhone: '+91 99999 99999'
+                        });
+                    }
                 } else {
-                    // CATCH-ALL: Allow any slug to work in demo mode
-                    console.log(`Demo Mode: Creating dynamic branding for slug "${slug}"`);
-                    setBranding({
-                        id: `demo-${slug}`,
-                        slug: slug,
-                        name: slug.charAt(0).toUpperCase() + slug.slice(1).replace(/-/g, ' '),
-                        primaryColor: '#2563eb',
-                        accentColor: '#3b82f6',
-                        logoImage: '/images/luxury/logo.png',
-                        receptionPhone: '+91 99999 99999',
-                        lateCheckoutPhone: '+91 99999 99999',
-                        lateCheckoutCharge1: 'Complimentary',
-                        lateCheckoutCharge2: '₹1,500',
-                        lateCheckoutCharge3: 'Full Day Rate'
-                    });
+                    setBranding(null); // Invalid slug in production
                 }
+            } catch (err) {
+                console.error("Critical error fetching branding:", err);
+                setBranding(null);
+            } finally {
+                setLoading(false);
             }
-            setLoading(false);
         };
 
         fetchBranding();
@@ -739,12 +750,12 @@ export async function addSupabaseRequest(hotelId: string, request: Partial<Hotel
         return { data: null, error: { message: "Invalid Hotel Configuration (Production)" } };
     }
 
-    const newRequestData: any = {
+    const newRequestData: Omit<HotelRequest, 'id'> = {
         hotel_id: hotelId,
         room: request.room || 'Unknown',
         type: request.type || 'Request',
         notes: request.notes,
-        status: request.status || 'Pending',
+        status: (request.status as RequestStatus) || 'Pending',
         price: request.price || 0,
         total: request.total || 0,
         timestamp: Date.now(),
@@ -1375,7 +1386,10 @@ export async function saveSupabaseMenuItem(hotelId: string, item: Partial<MenuIt
                 is_available: item.is_available
             })
             .eq('id', item.id);
-        if (error) console.error("Error updating menu item:", error.message, error);
+        if (error) {
+            console.error("Error updating menu item:", error.message, error);
+            alert(`Update Failed: ${error.message}`);
+        }
         return { data, error };
     } else {
         const { data, error } = await supabase
@@ -1383,8 +1397,10 @@ export async function saveSupabaseMenuItem(hotelId: string, item: Partial<MenuIt
             .insert([{ ...item, hotel_id: hotelId }]);
         if (error) {
             console.error("Error inserting menu item:", error.message, error);
-            if (error.message.includes('Could not find the table')) {
+            if (error.message.includes('not find')) {
                 alert("Database Table Missing: Please run the Restoration SQL from the Implementation Plan in Supabase.");
+            } else {
+                alert(`Creation Failed: ${error.message}`);
             }
         }
         return { data, error };

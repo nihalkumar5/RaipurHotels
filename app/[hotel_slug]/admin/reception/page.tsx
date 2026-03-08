@@ -252,6 +252,7 @@ export default function ReceptionPage() {
                     onClose={() => setIsGuestFormOpen(false)}
                     branding={branding}
                     onSuccess={loadData}
+                    initialRoomNumber={selectedRoomNum || ""}
                 />
             )}
         </div>
