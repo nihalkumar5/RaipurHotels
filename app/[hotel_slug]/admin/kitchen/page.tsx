@@ -1,14 +1,20 @@
 "use client";
 
-import { DepartmentDashboard } from "@/components/DepartmentDashboard";
+import { useParams } from "next/navigation";
+import { StaffDashboard } from "@/components/StaffDashboard";
 import { Utensils } from "lucide-react";
 
-export default function KitchenPage() {
+export default function KitchenDashboard() {
+    const params = useParams();
+    const hotelSlug = params?.hotel_slug as string;
+
     return (
-        <DepartmentDashboard
+        <StaffDashboard
+            hotelSlug={hotelSlug}
             department="kitchen"
-            title="Kitchen"
-            icon={<Utensils className="w-6 h-6" />}
+            title="Kitchen Board"
+            allowedTypes={["Water", "Dining", "Restaurant", "Room Service", "Food"]}
+            icon={<Utensils className="w-8 h-8 text-amber-500" />}
         />
     );
 }

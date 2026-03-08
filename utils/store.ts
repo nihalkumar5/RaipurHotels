@@ -40,7 +40,7 @@ export interface UserProfile {
     id: string;
     user_id: string;
     hotel_id: string;
-    role: 'admin' | 'staff';
+    role: 'admin' | 'reception' | 'kitchen' | 'housekeeping' | 'staff';
 }
 
 export interface HotelRequest {
@@ -239,10 +239,22 @@ export function useProfile(userId?: string) {
     return { profile, loading };
 }
 
-/**
- * Sign in with email and password
- */
-export async function signIn(email: string, password: string) {
+// --- Authentication & Profiles ---
+export const getUserProfile = async (userId: string): Promise<{ data: UserProfile | null; error: any }> => {
+    try {
+        const { data, error } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('user_id', userId)
+            .single();
+
+        return { data, error };
+    } catch (err) {
+        return { data: null, error: err };
+    }
+};
+
+export const signIn = async (email: string, password: string) => {
     return await supabase.auth.signInWithPassword({ email, password });
 }
 

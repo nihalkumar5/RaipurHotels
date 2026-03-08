@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, Suspense } from "react";
 import { useRouter, useParams, useSearchParams } from "next/navigation";
-import { signIn, useHotelBranding } from "@/utils/store";
+import { signIn, useHotelBranding, getUserProfile } from "@/utils/store";
 import { Lock, Mail, Loader2, Hotel, ShieldCheck } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -49,11 +49,21 @@ function LoginContent() {
 
             if (data.user) {
                 console.log("Sign-in successful, user ID:", data.user.id);
-                console.log("Redirecting to dashboard...");
 
-                // Use window.location.href for a hard redirect if router.push is failing 
-                // due to cookie synchronization timing in Next.js
-                window.location.href = `/${hotelSlug}/admin/dashboard`;
+                // Fetch profile to determine role-based redirection
+                const { data: profile } = await getUserProfile(data.user.id);
+
+                console.log("User profile loaded, role:", profile?.role);
+
+                let redirectPath = `/${hotelSlug}/admin/dashboard`;
+                if (profile?.role === 'kitchen') {
+                    redirectPath = `/${hotelSlug}/admin/kitchen`;
+                } else if (profile?.role === 'housekeeping') {
+                    redirectPath = `/${hotelSlug}/admin/housekeeping`;
+                }
+
+                console.log("Redirecting to:", redirectPath);
+                window.location.href = redirectPath;
             }
         } catch (err: any) {
             console.error("Catch block error during login:", err);
