@@ -14,7 +14,6 @@ export default function StatusPage() {
     const params = useParams();
     const hotelSlug = params?.hotel_slug as string;
     const { roomNumber, checkedInAt } = useGuestRoom();
-    console.log(`StatusPage: Current Session - Room ${roomNumber}, CheckedInAt: ${checkedInAt}`);
     const { branding } = useHotelBranding(hotelSlug);
     const requests = useSupabaseRequests(branding?.id, roomNumber, checkedInAt);
     const prevRequestsRef = useRef(requests);

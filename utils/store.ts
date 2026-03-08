@@ -356,10 +356,7 @@ export function useSupabaseRequests(hotelId?: string, roomNumber?: string, check
             }
 
             if (checkedInAt) {
-                console.log(`SupabaseQuery: Filtering by timestamp >= ${checkedInAt} (Room ${roomNumber})`);
                 query = query.gte('timestamp', checkedInAt);
-            } else {
-                console.warn(`SupabaseQuery: checkedInAt is MISSING for Room ${roomNumber}. Filtering might be disabled!`);
             }
 
             const { data, error } = await query.order('timestamp', { ascending: false });
