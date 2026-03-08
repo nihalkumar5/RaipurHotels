@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+export { supabase } from '@/lib/supabaseClient';
 import { supabase } from '@/lib/supabaseClient';
 import { RequestStatus } from '@/components/StatusBadge';
 
@@ -68,6 +69,17 @@ export interface Room {
     num_guests?: number;
     checked_in_at?: number | null;
     created_at?: string;
+}
+
+export interface Guest {
+    id: string;
+    hotel_id: string;
+    name: string;
+    phone: string;
+    room_number: string;
+    check_in_date: string;
+    check_out_date?: string;
+    status: 'active' | 'checked_out' | 'deleted';
 }
 
 export interface MenuItem {
@@ -160,6 +172,20 @@ const saveDemoRequests = (hotelId: string, requests: HotelRequest[]) => {
     localStorage.setItem(`${DEMO_REQUESTS_KEY}_${hotelId}`, JSON.stringify(requests));
     // Dispatch custom event for real-time update in same browser
     window.dispatchEvent(new CustomEvent('demo_requests_updated', { detail: { hotelId } }));
+};
+
+const DEMO_GUESTS_KEY = 'antigravity_demo_guests';
+
+const getDemoGuests = (hotelId: string): Guest[] => {
+    if (typeof window === 'undefined') return [];
+    const stored = localStorage.getItem(`${DEMO_GUESTS_KEY}_${hotelId}`);
+    return stored ? JSON.parse(stored) : [];
+};
+
+const saveDemoGuests = (hotelId: string, guests: Guest[]) => {
+    if (typeof window === 'undefined') return;
+    localStorage.setItem(`${DEMO_GUESTS_KEY}_${hotelId}`, JSON.stringify(guests));
+    window.dispatchEvent(new CustomEvent('demo_guests_updated', { detail: { hotelId } }));
 };
 
 const getDemoMenu = (hotelId: string): MenuItem[] => {
@@ -283,6 +309,173 @@ export const updateStaffRole = async (profileId: string, role: string): Promise<
 export const signIn = async (email: string, password: string) => {
     return await supabase.auth.signInWithPassword({ email, password });
 }
+
+// --- Guest Management ---
+export const addGuest = async (guestData: Omit<Guest, 'id' | 'status'>) => {
+    if (isDemoMode()) {
+        const guests = getDemoGuests(guestData.hotel_id);
+        const newGuest: Guest = {
+            ...guestData,
+            id: 'local-' + Math.random().toString(36).substr(2, 9),
+            status: 'active'
+        };
+        // Replace existing guest for the same room in demo mode
+        const filteredGuests = guests.filter(g => g.room_number !== guestData.room_number);
+        saveDemoGuests(guestData.hotel_id, [...filteredGuests, newGuest]);
+
+        // Update demo room status
+        const rooms = getDemoRooms(guestData.hotel_id);
+        const updatedRooms = rooms.map(r =>
+            r.room_number === guestData.room_number ? { ...r, is_occupied: true } : r
+        );
+        saveDemoRooms(guestData.hotel_id, updatedRooms);
+
+        return { data: newGuest, error: null };
+    }
+
+    try {
+        const { data, error } = await supabase
+            .from('guests')
+            .insert([
+                {
+                    ...guestData,
+                    status: 'active'
+                }
+            ])
+            .select()
+            .single();
+
+        if (error) {
+            if (error.code === 'PGRST204' || error.message.includes('not found')) {
+                // Table doesn't exist yet, fallback to local for demo purposes
+                const guests = getDemoGuests(guestData.hotel_id);
+                const newGuest: Guest = { ...guestData, id: 'local-' + Date.now(), status: 'active' };
+                saveDemoGuests(guestData.hotel_id, [...guests, newGuest]);
+                return { data: newGuest, error: null };
+            }
+            throw error;
+        }
+
+        if (data) {
+            await updateRoomStatus(guestData.hotel_id, guestData.room_number, true);
+        }
+
+        return { data, error: null };
+    } catch (err) {
+        return { data: null, error: err };
+    }
+};
+
+export const getHotelGuests = async (hotelId: string) => {
+    if (isDemoMode()) {
+        return { data: getDemoGuests(hotelId), error: null };
+    }
+
+    try {
+        const { data, error } = await supabase
+            .from('guests')
+            .select('*')
+            .eq('hotel_id', hotelId)
+            .eq('status', 'active');
+
+        if (error) {
+            if (error.code === 'PGRST204' || error.message.includes('not found')) {
+                return { data: getDemoGuests(hotelId), error: null };
+            }
+            throw error;
+        }
+        return { data, error };
+    } catch (err) {
+        return { data: getDemoGuests(hotelId), error: null };
+    }
+};
+
+export const deleteGuest = async (guestId: string, hotelId: string, roomNumber: string) => {
+    if (isDemoMode() || guestId.startsWith('local-')) {
+        const guests = getDemoGuests(hotelId);
+        saveDemoGuests(hotelId, guests.filter(g => g.id !== guestId));
+
+        const rooms = getDemoRooms(hotelId);
+        saveDemoRooms(hotelId, rooms.map(r => r.room_number === roomNumber ? { ...r, is_occupied: false } : r));
+
+        return { error: null };
+    }
+
+    try {
+        const { error } = await supabase
+            .from('guests')
+            .update({ status: 'checked_out', check_out_date: new Date().toISOString() })
+            .eq('id', guestId);
+
+        if (error) {
+            if (error.code === 'PGRST204' || error.message.includes('not found')) {
+                // Table doesn't exist yet, fallback to local for demo purposes
+                const guests = getDemoGuests(hotelId);
+                saveDemoGuests(hotelId, guests.filter(g => g.id !== guestId));
+                const rooms = getDemoRooms(hotelId);
+                saveDemoRooms(hotelId, rooms.map(r => r.room_number === roomNumber ? { ...r, is_occupied: false } : r));
+                return { error: null };
+            }
+            throw error;
+        }
+
+        await updateRoomStatus(hotelId, roomNumber, false);
+        return { error: null };
+    } catch (err) {
+        return { error: err };
+    }
+};
+
+export const getHotelRooms = async (hotelId: string) => {
+    if (isDemoMode()) {
+        return { data: getDemoRooms(hotelId), error: null };
+    }
+
+    try {
+        const { data, error } = await supabase
+            .from('rooms')
+            .select('*')
+            .eq('hotel_id', hotelId)
+            .order('room_number', { ascending: true });
+
+        if (error) {
+            if (error.code === 'PGRST204' || error.message.includes('not found')) {
+                return { data: getDemoRooms(hotelId), error: null };
+            }
+            throw error;
+        }
+        return { data, error: null };
+    } catch (err: any) {
+        console.error("Error fetching rooms, falling back to demo:", err);
+        return { data: getDemoRooms(hotelId), error: null };
+    }
+};
+
+export const updateRoomStatus = async (hotelId: string, roomNumber: string, isOccupied: boolean) => {
+    try {
+        // First find the room by number and hotel
+        const { data: rooms, error: findError } = await supabase
+            .from('rooms')
+            .select('id')
+            .eq('hotel_id', hotelId)
+            .eq('room_number', roomNumber);
+
+        if (findError) throw findError;
+
+        if (rooms && rooms.length > 0) {
+            const { error: updateError } = await supabase
+                .from('rooms')
+                .update({ is_occupied: isOccupied })
+                .eq('id', rooms[0].id);
+
+            return { error: updateError };
+        }
+
+        return { error: 'Room not found' };
+    } catch (err) {
+        return { error: err };
+    }
+};
 
 export const resetPasswordForEmail = async (email: string, redirectTo: string) => {
     return await supabase.auth.resetPasswordForEmail(email, {
@@ -657,8 +850,14 @@ export async function settleRoomRequests(hotelId: string, room: string) {
 export async function addRoom(hotelId: string, roomNumber: string) {
     if (isDemoMode()) {
         const rooms = getDemoRooms(hotelId);
+
+        // Check if room number already exists
+        if (rooms.some(r => r.room_number === roomNumber)) {
+            return { data: null, error: { message: "Room already exists" } };
+        }
+
         const newRoom: Room = {
-            id: Math.random().toString(36).substr(2, 9),
+            id: 'r-' + Math.random().toString(36).substr(2, 9),
             hotel_id: hotelId,
             room_number: roomNumber,
             is_occupied: false,

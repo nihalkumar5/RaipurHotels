@@ -25,11 +25,18 @@ export default function RoomsPage() {
 
     const handleAddRoom = async () => {
         if (!branding?.id || !newRoomNumber.trim()) return;
-        const { data } = await addRoom(branding.id, newRoomNumber.trim());
 
-        // Local update for Demo Mode
-        if (data) {
-            setRoomsList(prev => [...prev, { ...data, is_occupied: false, booking_pin: null }]);
+        // Client-side validation: Check if room already exists
+        if (roomsList.some(r => r.room_number === newRoomNumber.trim())) {
+            alert("This room number already exists.");
+            return;
+        }
+
+        const { error } = await addRoom(branding.id, newRoomNumber.trim());
+
+        if (error) {
+            alert(error.message || "Failed to add room.");
+            return;
         }
 
         setNewRoomNumber("");
@@ -48,18 +55,7 @@ export default function RoomsPage() {
             return;
         }
 
-        // Local update for Demo Mode
-        setRoomsList(prev => prev.map(r =>
-            r.id === roomId ? {
-                ...r,
-                is_occupied: true,
-                booking_pin: pin,
-                checkout_date: checkInDetails.date,
-                checkout_time: checkInDetails.time,
-                num_guests: checkInDetails.numGuests
-            } : r
-        ));
-
+        // The hook (useRooms) will handle real-time updates from Supabase or Custom Event
         setCheckInDetails(null);
         alert(`Room Checked In! Guests must use the generated PIN: ${pin} to access the menu.`);
     };
@@ -69,16 +65,7 @@ export default function RoomsPage() {
         if (confirm("Check out this room? The guest will immediately lose access to the digital menu.")) {
             await checkOutRoom(roomId, branding.id);
 
-            // Local update for Demo Mode
-            setRoomsList(prev => prev.map(r =>
-                r.id === roomId ? {
-                    ...r,
-                    is_occupied: false,
-                    booking_pin: null,
-                    checkout_date: undefined,
-                    checkout_time: undefined
-                } : r
-            ));
+            // The hook (useRooms) will handle real-time updates
         }
     };
 
@@ -86,7 +73,7 @@ export default function RoomsPage() {
         if (!branding?.id) return;
         if (confirm("Are you sure you want to delete this room? This action cannot be undone.")) {
             await deleteRoom(roomId, branding.id);
-            setRoomsList(prev => prev.filter(r => r.id !== roomId));
+            // Remove manual filter; useRooms hook handles it
         }
     };
 
