@@ -100,7 +100,6 @@ export default function BrandingPage() {
                                     value={config.name || ""}
                                     onChange={(e) => setConfig({ ...config, name: e.target.value })}
                                     className="w-full bg-slate-50 border border-slate-100 rounded-2xl py-3 px-4 font-bold text-slate-900 focus:ring-2 transition-all outline-none"
-                                    style={{ focusRingColor: `${config.primaryColor}30` } as any}
                                 />
                             </div>
                             <div className="grid grid-cols-2 gap-4">
@@ -139,6 +138,15 @@ export default function BrandingPage() {
                                     )}
                                 </div>
                             </div>
+                        </div>
+                    </section>
+
+                    <section className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm">
+                        <div className="flex items-center mb-6">
+                            <Phone className="w-5 h-5 text-blue-600 mr-3" style={{ color: config.primaryColor }} />
+                            <h2 className="text-xl font-black text-slate-900">Communication & Connectivity</h2>
+                        </div>
+                        <div className="space-y-6">
                             <div>
                                 <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Reception Contact Number</label>
                                 <div className="flex items-center bg-slate-50 border border-slate-100 rounded-2xl px-4 py-3 focus-within:ring-2 transition-all">
@@ -149,6 +157,28 @@ export default function BrandingPage() {
                                         value={config.receptionPhone || ""}
                                         onChange={(e) => setConfig({ ...config, receptionPhone: e.target.value })}
                                         className="bg-transparent w-full font-bold text-slate-900 outline-none"
+                                    />
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">WiFi Network Name</label>
+                                    <input
+                                        type="text"
+                                        placeholder="e.g. Guest_WiFi"
+                                        value={config.wifiName || ""}
+                                        onChange={(e) => setConfig({ ...config, wifiName: e.target.value })}
+                                        className="w-full bg-slate-50 border border-slate-100 rounded-2xl py-3 px-4 font-bold text-slate-900 focus:ring-2 transition-all outline-none"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">WiFi Password</label>
+                                    <input
+                                        type="text"
+                                        placeholder="e.g. welcome123"
+                                        value={config.wifiPassword || ""}
+                                        onChange={(e) => setConfig({ ...config, wifiPassword: e.target.value })}
+                                        className="w-full bg-slate-50 border border-slate-100 rounded-2xl py-3 px-4 font-bold text-slate-900 focus:ring-2 transition-all outline-none"
                                     />
                                 </div>
                             </div>
