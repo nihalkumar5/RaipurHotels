@@ -354,14 +354,15 @@ export default function BrandingPage() {
 
                         <div className="space-y-6">
                             <div>
-                                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">WhatsApp Welcome Text</label>
+                                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">WhatsApp Welcome Text (Line 2)</label>
                                 <textarea
-                                    placeholder="e.g. Welcome to our hotel! We're glad to have you. Your room is ready."
+                                    placeholder="e.g. We're glad to have you. Your room is ready and we hope you enjoy your stay."
                                     value={config.welcomeMessage || ""}
                                     onChange={(e) => setConfig({ ...config, welcomeMessage: e.target.value })}
                                     className="w-full bg-slate-50 border border-slate-100 rounded-2xl py-3 px-4 font-bold text-slate-900 outline-none focus:ring-2 transition-all min-h-[100px] resize-none text-sm"
                                 />
-                                <p className="text-[10px] text-slate-400 mt-2 font-medium italic">Tip: Mention their Room Number and the Digital Dashboard link.</p>
+                                <p className="text-[10px] text-slate-400 mt-2 font-medium italic">Note: "Welcome [Guest Name]" will be added automatically as the first line.</p>
+
                             </div>
                         </div>
                     </section>

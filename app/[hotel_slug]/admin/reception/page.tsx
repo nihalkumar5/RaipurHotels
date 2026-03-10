@@ -87,7 +87,9 @@ export default function ReceptionPage() {
         } else if (type === 'checkout') {
             msg = `Hello ${guest.name} 👋\n\nJust a reminder for your checkout today. Hope you had a comfortable stay at ${branding?.name}!`;
         } else {
-            msg = `Hello ${guest.name} 👋\n\nWelcome to ${branding?.name}! Your room is ${guest.room_number}. You can order food here: ${dashboardUrl}`;
+            const welcomeHeader = `Welcome ${guest.name}\n`;
+            const customMsg = branding?.welcomeMessage || "We're glad to have you! Have a great stay.";
+            msg = `${welcomeHeader}${customMsg}`;
         }
 
         const url = `https://wa.me/${finalPhone}?text=${encodeURIComponent(msg)}`;
