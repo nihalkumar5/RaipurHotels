@@ -87,10 +87,12 @@ export default function ReceptionPage() {
         } else if (type === 'checkout') {
             msg = `Hello ${guest.name} 👋\n\nJust a reminder for your checkout today. Hope you had a comfortable stay at ${branding?.name}!`;
         } else {
-            const welcomeHeader = `Welcome ${guest.name}\n`;
+            const welcomeHeader = `*Namaste ${guest.name}!* 🙏\n\nWelcome to *${branding?.name}*. We are absolutely delighted to have you with us.\n\nYour sanctuary for this stay is *Room ${guest.room_number}*.\n\n`;
             const customMsg = branding?.welcomeMessage || "We're glad to have you! Have a great stay.";
-            msg = `${welcomeHeader}${customMsg}`;
+            const footer = `\n\nWe are here to make your stay magical. ✨`;
+            msg = `${welcomeHeader}${customMsg}${footer}`;
         }
+
 
         const url = `https://wa.me/${finalPhone}?text=${encodeURIComponent(msg)}`;
         window.open(url, "_blank");

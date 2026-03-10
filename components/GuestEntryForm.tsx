@@ -30,10 +30,11 @@ export default function GuestEntryForm({ isOpen, onClose, branding, onSuccess, i
     }, [isOpen, initialRoomNumber]);
 
     const generateWhatsAppUrl = (name: string, phone: string, room: string, pin?: string) => {
-        const welcomeHeader = `Welcome ${name}\n`;
+        const welcomeHeader = `*Namaste ${name}!* 🙏\n\nWelcome to *${branding.name}*. We are absolutely delighted to have you with us.\n\nYour sanctuary for this stay is *Room ${room}*.\n\n`;
         const customMessage = branding.welcomeMessage || "We're glad to have you! Have a great stay.";
+        const footer = `\n\nWe are here to make your stay magical. ✨`;
 
-        const message = `${welcomeHeader}${customMessage}`;
+        const message = `${welcomeHeader}${customMessage}${footer}`;
 
         const encoded = encodeURIComponent(message);
         const numericPhone = phone.replace(/[^0-9]/g, '');
@@ -41,6 +42,7 @@ export default function GuestEntryForm({ isOpen, onClose, branding, onSuccess, i
 
         return `https://wa.me/${finalPhone}?text=${encoded}`;
     };
+
 
 
     const handleSubmit = async (e: React.FormEvent) => {

@@ -361,7 +361,8 @@ export default function BrandingPage() {
                                     onChange={(e) => setConfig({ ...config, welcomeMessage: e.target.value })}
                                     className="w-full bg-slate-50 border border-slate-100 rounded-2xl py-3 px-4 font-bold text-slate-900 outline-none focus:ring-2 transition-all min-h-[100px] resize-none text-sm"
                                 />
-                                <p className="text-[10px] text-slate-400 mt-2 font-medium italic">Note: "Welcome [Guest Name]" will be added automatically as the first line.</p>
+                                <p className="text-[10px] text-[#2563eb] mt-2 font-black italic">✨ Premium Experience: We automatically add a "Namaste" greeting and "Room Sanctuary" header before your message, and a magical closing after it.</p>
+
 
                             </div>
                         </div>
