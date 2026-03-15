@@ -6,12 +6,12 @@ import {
     CheckCircle2,
     ChevronRight,
     Phone,
+    Sparkle,
     Sparkles,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useParams, useRouter } from "next/navigation";
 import {
-    updateSupabaseRequestStatus,
     useHotelBranding,
     useSupabaseRequests,
 } from "@/utils/store";
@@ -131,6 +131,36 @@ const getStatusTone = (status: RequestStatus) => {
     }
 };
 
+const getCompletionMessage = (hotelName?: string) => {
+    const name = hotelName?.trim() || "your hotel";
+    const normalized = name.toLowerCase();
+
+    if (normalized.includes("resort") || normalized.includes("bay") || normalized.includes("sand")) {
+        return {
+            heading: "All Set",
+            body: "Your room requests have been completed.",
+            closing: "Relax and enjoy your stay at",
+            hotel: name,
+        };
+    }
+
+    if (normalized.includes("mountain") || normalized.includes("lodge")) {
+        return {
+            heading: "All Set",
+            body: "Your room requests have been completed.",
+            closing: "Enjoy the serenity of",
+            hotel: name,
+        };
+    }
+
+    return {
+        heading: "All Set",
+        body: "Your room requests have been completed.",
+        closing: "Enjoy your stay at",
+        hotel: name,
+    };
+};
+
 export default function StatusPage() {
     const router = useRouter();
     const params = useParams();
@@ -198,6 +228,7 @@ export default function StatusPage() {
 
     const secondaryRequests = sortedActiveRequests.filter((request) => request.id !== primaryRequest?.id);
     const supportPhone = branding?.receptionPhone?.trim();
+    const completionMessage = getCompletionMessage(branding?.name);
 
     const renderTimeline = (request: HotelRequest) => {
         const steps = getTimelineSteps(request.status);
@@ -356,13 +387,17 @@ export default function StatusPage() {
                         <ArrowLeft className="h-5 w-5 text-[#1F1F1F]" />
                     </button>
                     <div>
-                        <h1 className="font-serif text-[24px] font-semibold text-[#1F1F1F]">Live Request</h1>
+                        <h1 className="font-serif text-[24px] font-semibold text-[#1F1F1F]">
+                            {primaryRequest ? "Live Request" : "Requests"}
+                        </h1>
                     </div>
                 </div>
-                <span className="inline-flex items-center gap-1 rounded-full bg-[#FDECEC] px-3 py-1.5 text-[12px] font-black uppercase tracking-[0.12em] text-[#E5484D]">
-                    <span className="h-2 w-2 rounded-full bg-[#E5484D] animate-[pulse_2s_infinite]" />
-                    Live
-                </span>
+                {primaryRequest && (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-[#FDECEC] px-3 py-1.5 text-[12px] font-black uppercase tracking-[0.12em] text-[#E5484D]">
+                        <span className="h-2 w-2 rounded-full bg-[#E5484D] animate-[pulse_2s_infinite]" />
+                        Live
+                    </span>
+                )}
             </div>
 
             {primaryRequest ? (
@@ -400,40 +435,71 @@ export default function StatusPage() {
                     )}
                 </div>
             ) : (
-                <div className="rounded-[24px] border border-[#EEE7DC] bg-white p-8 text-center shadow-[0_10px_25px_rgba(0,0,0,0.05)]">
-                    <Sparkles className="mx-auto h-12 w-12 text-[#CFA46A]" />
-                    <p className="mt-4 font-serif text-[24px] text-[#1F1F1F]">All Clear</p>
-                    <p className="mt-2 text-[12px] uppercase tracking-[0.16em] text-slate-400">
-                        No active requests right now
+                <div className="relative overflow-hidden rounded-[22px] border border-[#EEE7DC] bg-[linear-gradient(180deg,#FFFFFF,#F9F6F1)] p-7 text-center shadow-[0_12px_30px_rgba(0,0,0,0.08)]">
+                    <div className="pointer-events-none absolute inset-0 opacity-10">
+                        <div className="absolute -right-2 top-6 text-[64px] text-[#CFA46A]">🛎️</div>
+                        <div className="absolute left-3 bottom-5 text-[56px] text-[#D8BA8B]">☕</div>
+                    </div>
+                    <motion.div
+                        animate={{ opacity: [0.7, 1, 0.7], scale: [1, 1.08, 1] }}
+                        transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                        className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[#FBF5EA]"
+                    >
+                        <Sparkle className="h-7 w-7 text-[#CFA46A]" />
+                    </motion.div>
+                    <p className="mt-4 font-serif text-[28px] text-[#1F1F1F]">{completionMessage.heading}</p>
+                    <p className="mx-auto mt-3 max-w-[240px] text-[14px] leading-6 text-slate-600">
+                        {completionMessage.body}
                     </p>
+                    <p className="mt-5 text-[12px] uppercase tracking-[0.16em] text-slate-400">
+                        {completionMessage.closing}
+                    </p>
+                    <p className="mt-2 font-serif text-[26px] font-semibold uppercase tracking-[0.04em] text-[#1F1F1F]">
+                        {completionMessage.hotel}
+                    </p>
+                    <div className="mt-7">
+                        <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">
+                            Need Anything Else?
+                        </p>
+                        <button
+                            type="button"
+                            onClick={() => router.push(`/${hotelSlug}/guest/services`)}
+                            className="mt-3 inline-flex items-center justify-center rounded-[16px] bg-[#CFA46A] px-5 py-3 text-[12px] font-semibold text-white shadow-[0_10px_20px_rgba(207,164,106,0.22)] transition-transform active:scale-95"
+                        >
+                            Request Service
+                        </button>
+                    </div>
                 </div>
             )}
 
             {completedRequests.length > 0 && (
                 <div className="mt-8">
                     <p className="mb-3 text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">
-                        Completed Requests
+                        Completed Today
                     </p>
                     <div className="space-y-3">
                         {completedRequests.map((request) => (
                             <div
                                 key={request.id}
-                                className="flex items-center justify-between rounded-[18px] border border-[#EEE7DC] bg-white px-4 py-3 opacity-85"
+                                className="rounded-[18px] border border-[#EEE7DC] bg-white px-4 py-3"
                             >
-                                <div className="flex items-center gap-3">
-                                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#F7F1E5]">
-                                        <CheckCircle2 className="h-5 w-5 text-[#B98945]" />
+                                <div className="flex items-start justify-between gap-4">
+                                    <div className="flex items-start gap-3">
+                                        <div className="mt-0.5 flex h-8 w-8 items-center justify-center rounded-full bg-[#F7F1E5]">
+                                            <CheckCircle2 className="h-4 w-4 text-[#B98945]" />
+                                        </div>
+                                        <div>
+                                            <p className="text-[14px] font-semibold text-[#1F1F1F]">
+                                                {request.type}{" "}
+                                                <span className="font-medium text-slate-500">delivered</span>
+                                            </p>
+                                            <p className="mt-1 text-[11px] text-slate-400">{request.time}</p>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <p className="text-[14px] font-semibold text-[#1F1F1F]">{request.type}</p>
-                                        <p className="text-[11px] text-slate-400">
-                                            {request.time} · Room {request.room}
-                                        </p>
-                                    </div>
+                                    <span className="rounded-full bg-[#ECF9F1] px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-[#1C8B57]">
+                                        Delivered
+                                    </span>
                                 </div>
-                                <span className="rounded-full bg-[#ECF9F1] px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-[#1C8B57]">
-                                    Delivered
-                                </span>
                             </div>
                         ))}
                     </div>
