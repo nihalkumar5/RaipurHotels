@@ -21,27 +21,24 @@ export function BottomNav() {
     ];
 
     return (
-        <nav className="fixed bottom-4 left-1/2 z-50 flex h-16 w-[calc(100%-32px)] max-w-[480px] -translate-x-1/2 items-center justify-between rounded-[24px] border border-white/45 bg-white/72 px-4 font-sans shadow-[0_15px_35px_rgba(0,0,0,0.1)] backdrop-blur-xl">
+        <nav className="fixed bottom-0 left-1/2 z-50 flex h-[68px] w-[96%] max-w-[520px] -translate-x-1/2 items-center justify-around rounded-t-[28px] border border-white/70 bg-white/85 font-sans shadow-[0_20px_40px_rgba(0,0,0,0.15)] backdrop-blur-[20px] pb-[env(safe-area-inset-bottom)]">
             {items.map((item) => {
                 const active = isActive(item.key);
                 return (
                     <Link
                         key={item.key}
                         href={item.href}
-                        className="relative flex min-w-[62px] flex-col items-center gap-1"
+                        className="relative flex w-1/4 flex-col items-center justify-center"
                     >
                         <motion.div
                             whileTap={{ scale: 0.94 }}
-                            className={`rounded-full p-2 transition-all duration-300 ${active ? "bg-black shadow-[0_6px_14px_rgba(0,0,0,0.28)]" : "bg-transparent"}`}
+                            className={`flex h-[40px] w-[40px] items-center justify-center rounded-full transition-all duration-300 ${active ? "bg-[#CFA46A] shadow-[0_8px_20px_rgba(207,164,106,0.35)]" : "bg-transparent"}`}
                         >
                             <item.icon 
-                                className={`h-[22px] w-[22px] transition-all duration-300 ${active ? "text-white fill-white/10" : "text-[#1F1F1F] opacity-35"}`} 
+                                className={`h-[22px] w-[22px] transition-all duration-300 ${active ? "text-[#1F1F1F]" : "text-[#8A93A2]"}`} 
                                 strokeWidth={active ? 2.5 : 2} 
                             />
                         </motion.div>
-                        <span className={`text-[9px] font-black uppercase tracking-[0.18em] transition-all duration-300 ${active ? "text-black" : "text-slate-500/70"}`}>
-                            {item.label}
-                        </span>
                     </Link>
                 );
             })}
