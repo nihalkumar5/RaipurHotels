@@ -8,7 +8,7 @@ import {
     LogOut, RefreshCw, XCircle, LayoutDashboard, UtensilsCrossed, 
     Home, MessageSquare, ClipboardList, CreditCard, Users, 
     BarChart3, Settings, ShieldAlert, Clock, Map as MapIcon, 
-    AlertCircle, Sparkles, ChevronRight
+    AlertCircle, Sparkles, ChevronRight, Loader2
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
@@ -22,6 +22,13 @@ import {
 } from "@/utils/store";
 import { startAdminAlert, stopAdminAlert, startWaterAlert, stopWaterAlert, initAudioContext } from "@/utils/audio";
 import { RequestDetailModal } from "@/components/RequestDetailModal";
+import { Toast } from "@/components/Toast";
+
+type LateCheckoutDraft = {
+    requestId: string;
+    room: string;
+    time: string;
+};
 
 export default function AdminDashboard() {
     const router = useRouter();
@@ -37,19 +44,84 @@ export default function AdminDashboard() {
     const [activeTab, setActiveTab] = useState<"queue" | "active" | "history">("queue");
     const [searchQuery, setSearchQuery] = useState("");
     const [showMap, setShowMap] = useState(false);
+    const [lateCheckoutDraft, setLateCheckoutDraft] = useState<LateCheckoutDraft | null>(null);
+    const [rejectingRequestId, setRejectingRequestId] = useState<string | null>(null);
+    const [submittingAction, setSubmittingAction] = useState(false);
+    const [toast, setToast] = useState<{ message: string; type: "success" | "error"; isVisible: boolean }>({
+        message: "",
+        type: "success",
+        isVisible: false,
+    });
 
-    const handleApproveLateCheckout = async (requestId: string, room: string) => {
-        if (!branding?.id) return;
-        const newTime = prompt("Specify the approved checkout time:", "1:00 PM");
-        if (newTime) {
-            await approveLateCheckout(requestId, branding.id, room, newTime);
+    const formatCheckoutTime = (time: string) => {
+        const [hourText, minuteText] = time.split(":");
+        const hour = Number(hourText);
+        const minute = Number(minuteText);
+
+        if (Number.isNaN(hour) || Number.isNaN(minute)) {
+            return time;
         }
+
+        const suffix = hour >= 12 ? "PM" : "AM";
+        const displayHour = hour % 12 || 12;
+        return `${displayHour}:${minute.toString().padStart(2, "0")} ${suffix}`;
     };
 
-    const handleRejectRequest = async (id: string) => {
-        if (confirm("Are you sure you want to reject this request?")) {
-            await rejectSupabaseRequest(id);
+    const showActionToast = (message: string, type: "success" | "error") => {
+        setToast({ message, type, isVisible: true });
+    };
+
+    const handleApproveLateCheckout = (requestId: string, room: string) => {
+        setLateCheckoutDraft({
+            requestId,
+            room,
+            time: "13:00",
+        });
+    };
+
+    const submitLateCheckoutApproval = async () => {
+        if (!branding?.id || !lateCheckoutDraft) return;
+
+        setSubmittingAction(true);
+        const formattedTime = formatCheckoutTime(lateCheckoutDraft.time);
+        const { error } = await approveLateCheckout(
+            lateCheckoutDraft.requestId,
+            branding.id,
+            lateCheckoutDraft.room,
+            formattedTime,
+        );
+
+        setSubmittingAction(false);
+
+        if (error) {
+            showActionToast("Late checkout approval failed. Please try again.", "error");
+            return;
         }
+
+        setLateCheckoutDraft(null);
+        setSelectedRequest(null);
+        showActionToast(`Late checkout approved for Room ${lateCheckoutDraft.room}.`, "success");
+    };
+
+    const handleRejectRequest = (id: string) => {
+        setRejectingRequestId(id);
+    };
+
+    const confirmRejectRequest = async () => {
+        if (!rejectingRequestId) return;
+
+        setSubmittingAction(true);
+        const { error } = await rejectSupabaseRequest(rejectingRequestId);
+        setSubmittingAction(false);
+
+        if (error) {
+            showActionToast("Request could not be rejected. Please try again.", "error");
+            return;
+        }
+
+        setRejectingRequestId(null);
+        setSelectedRequest(null);
+        showActionToast("Request rejected.", "success");
     };
 
     useEffect(() => {
@@ -94,7 +166,16 @@ export default function AdminDashboard() {
     }, [requests, audioEnabled]);
 
     const updateStatus = async (id: string, newStatus: RequestStatus) => {
-        await updateSupabaseRequestStatus(id, newStatus);
+        const { error } = await updateSupabaseRequestStatus(id, newStatus);
+
+        if (error) {
+            showActionToast("Action failed. Please check your permissions and try again.", "error");
+            return;
+        }
+
+        if (newStatus === "Assigned") {
+            showActionToast("Request accepted and moved to dispatch.", "success");
+        }
     };
 
     const toggleAudio = () => {
@@ -439,7 +520,133 @@ export default function AdminDashboard() {
                 onApprove={handleApproveLateCheckout}
                 onReject={handleRejectRequest}
             />
+
+            <AnimatePresence>
+                {lateCheckoutDraft && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-50 flex items-end justify-center bg-[#020617]/60 p-4 backdrop-blur-sm md:items-center"
+                    >
+                        <motion.div
+                            initial={{ opacity: 0, y: 32, scale: 0.98 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            exit={{ opacity: 0, y: 20, scale: 0.98 }}
+                            className="w-full max-w-md rounded-[2rem] border border-slate-200 bg-white p-6 shadow-2xl"
+                        >
+                            <p className="mb-2 text-[10px] font-black uppercase tracking-[0.3em] text-[#C6A25A]">
+                                Late Checkout
+                            </p>
+                            <h3 className="text-2xl font-black text-slate-900">
+                                Approve Room {lateCheckoutDraft.room}
+                            </h3>
+                            <p className="mt-2 text-sm font-medium leading-relaxed text-slate-500">
+                                Choose the new checkout time. The room status and request queue will update together.
+                            </p>
+
+                            <div className="mt-6 rounded-[1.5rem] border border-slate-200 bg-slate-50 p-4">
+                                <label className="mb-2 block text-[10px] font-black uppercase tracking-[0.25em] text-slate-400">
+                                    New Checkout Time
+                                </label>
+                                <input
+                                    type="time"
+                                    value={lateCheckoutDraft.time}
+                                    onChange={(event) =>
+                                        setLateCheckoutDraft({
+                                            ...lateCheckoutDraft,
+                                            time: event.target.value,
+                                        })
+                                    }
+                                    className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-lg font-black text-slate-900 outline-none transition-all focus:border-[#C6A25A]"
+                                />
+                                <p className="mt-3 text-xs font-bold uppercase tracking-[0.2em] text-slate-400">
+                                    Guest will see: {formatCheckoutTime(lateCheckoutDraft.time)}
+                                </p>
+                            </div>
+
+                            <div className="mt-6 flex gap-3">
+                                <button
+                                    type="button"
+                                    onClick={() => setLateCheckoutDraft(null)}
+                                    className="flex-1 rounded-2xl border border-slate-200 px-4 py-3 text-sm font-black uppercase tracking-[0.18em] text-slate-500 transition-all hover:bg-slate-50"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={submitLateCheckoutApproval}
+                                    disabled={submittingAction}
+                                    className="flex flex-1 items-center justify-center rounded-2xl bg-green-600 px-4 py-3 text-sm font-black uppercase tracking-[0.18em] text-white transition-all hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-70"
+                                >
+                                    {submittingAction ? (
+                                        <Loader2 className="h-4 w-4 animate-spin" />
+                                    ) : (
+                                        "Approve"
+                                    )}
+                                </button>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            <AnimatePresence>
+                {rejectingRequestId && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-50 flex items-end justify-center bg-[#020617]/60 p-4 backdrop-blur-sm md:items-center"
+                    >
+                        <motion.div
+                            initial={{ opacity: 0, y: 32, scale: 0.98 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            exit={{ opacity: 0, y: 20, scale: 0.98 }}
+                            className="w-full max-w-md rounded-[2rem] border border-slate-200 bg-white p-6 shadow-2xl"
+                        >
+                            <p className="mb-2 text-[10px] font-black uppercase tracking-[0.3em] text-red-500">
+                                Confirm Action
+                            </p>
+                            <h3 className="text-2xl font-black text-slate-900">
+                                Reject This Request?
+                            </h3>
+                            <p className="mt-2 text-sm font-medium leading-relaxed text-slate-500">
+                                The guest will see this request as rejected immediately. You can still review it later in the archive.
+                            </p>
+
+                            <div className="mt-6 flex gap-3">
+                                <button
+                                    type="button"
+                                    onClick={() => setRejectingRequestId(null)}
+                                    className="flex-1 rounded-2xl border border-slate-200 px-4 py-3 text-sm font-black uppercase tracking-[0.18em] text-slate-500 transition-all hover:bg-slate-50"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={confirmRejectRequest}
+                                    disabled={submittingAction}
+                                    className="flex flex-1 items-center justify-center rounded-2xl bg-red-600 px-4 py-3 text-sm font-black uppercase tracking-[0.18em] text-white transition-all hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-70"
+                                >
+                                    {submittingAction ? (
+                                        <Loader2 className="h-4 w-4 animate-spin" />
+                                    ) : (
+                                        "Reject"
+                                    )}
+                                </button>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            <Toast
+                message={toast.message}
+                type={toast.type}
+                isVisible={toast.isVisible}
+                onClose={() => setToast((current) => ({ ...current, isVisible: false }))}
+            />
         </div>
     );
 }
-

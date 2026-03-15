@@ -100,10 +100,8 @@ export function RequestDetailModal({ request, onClose, onApprove, onReject }: Re
                             {onReject && (request.status === "Pending" || request.status === "Assigned") && (
                                 <button
                                     onClick={() => {
-                                        if (confirm("Reject this request?")) {
-                                            onReject(request.id);
-                                            onClose();
-                                        }
+                                        onReject(request.id);
+                                        onClose();
                                     }}
                                     className="px-6 py-2.5 bg-red-50 text-red-600 rounded-xl font-bold hover:bg-red-100 transition-all border border-red-100 active:scale-95"
                                 >
@@ -114,11 +112,8 @@ export function RequestDetailModal({ request, onClose, onApprove, onReject }: Re
                             {onApprove && request.type === "Late Checkout" && request.status !== "Completed" && request.status !== "Rejected" && (
                                 <button
                                     onClick={() => {
-                                        const newTime = prompt("Set new checkout time:", "1:00 PM");
-                                        if (newTime) {
-                                            onApprove(request.id, request.room);
-                                            onClose();
-                                        }
+                                        onApprove(request.id, request.room);
+                                        onClose();
                                     }}
                                     className="px-6 py-2.5 bg-green-600 text-white rounded-xl font-bold hover:bg-green-700 transition-all shadow-lg shadow-green-100 active:scale-95"
                                 >
