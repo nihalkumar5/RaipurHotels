@@ -335,18 +335,19 @@ export default function GuestDashboard() {
                         { label: "Cleaning", icon: <Sparkles strokeWidth={2.3} />, action: () => handleQuickRequest("Cleaning", "Housekeeping requested") },
                         { label: showMoreServices ? "Less" : "More", icon: <MoreHorizontal strokeWidth={2.3} />, action: () => setShowMoreServices((prev) => !prev) }
                     ].map((s, i) => (
-                        <motion.button
-                            key={i}
-                            whileTap={{ scale: 0.96 }}
-                            whileHover={{ y: -2 }}
-                            onClick={() => s.path ? router.push(`/${hotelSlug}/guest/${s.path}`) : s.action?.()}
-                            className="flex h-[92px] flex-col items-center justify-center gap-1.5 rounded-[18px] border border-black/5 bg-white/55 p-3 text-center shadow-[0_8px_18px_rgba(0,0,0,0.06)] transition-all duration-200"
-                        >
-                            <div className="flex items-center justify-center text-black">
-                                {renderIcon(s.icon, "h-7 w-7")}
-                            </div>
-                            <h3 className="text-[11px] font-medium leading-tight text-[#2b2b2b]">{s.label}</h3>
-                        </motion.button>
+                        <div key={i} className="px-1 text-center">
+                            <motion.button
+                                whileTap={{ scale: 0.96 }}
+                                whileHover={{ y: -2 }}
+                                onClick={() => s.path ? router.push(`/${hotelSlug}/guest/${s.path}`) : s.action?.()}
+                                className="flex h-[92px] w-full items-center justify-center rounded-[18px] border border-black/5 bg-white/55 p-3 shadow-[0_8px_18px_rgba(0,0,0,0.06)] transition-all duration-200"
+                            >
+                                <div className="flex items-center justify-center text-black">
+                                    {renderIcon(s.icon, "h-7 w-7")}
+                                </div>
+                            </motion.button>
+                            <h3 className="mt-1.5 text-[10px] font-medium leading-tight text-[#2b2b2b]">{s.label}</h3>
+                        </div>
                     ))}
                 </div>
                 {showMoreServices && (
@@ -357,18 +358,19 @@ export default function GuestDashboard() {
                             { label: "Airport", icon: <Compass strokeWidth={2.3} />, action: () => handleQuickRequest("Reception", "Airport transfer requested") },
                             { label: "Spa", icon: <Waves strokeWidth={2.3} />, path: "services" }
                         ].map((s, i) => (
-                            <motion.button
-                                key={i}
-                                whileTap={{ scale: 0.96 }}
-                                whileHover={{ y: -2 }}
-                                onClick={() => s.path ? router.push(`/${hotelSlug}/guest/${s.path}`) : s.action?.()}
-                                className="flex h-[92px] flex-col items-center justify-center gap-1.5 rounded-[18px] border border-black/5 bg-white/55 p-3 text-center shadow-[0_8px_18px_rgba(0,0,0,0.06)] transition-all duration-200"
-                            >
-                                <div className="flex items-center justify-center text-black">
-                                    {renderIcon(s.icon, "h-7 w-7")}
-                                </div>
-                                <h3 className="text-[11px] font-medium leading-tight text-[#2b2b2b]">{s.label}</h3>
-                            </motion.button>
+                            <div key={i} className="px-1 text-center">
+                                <motion.button
+                                    whileTap={{ scale: 0.96 }}
+                                    whileHover={{ y: -2 }}
+                                    onClick={() => s.path ? router.push(`/${hotelSlug}/guest/${s.path}`) : s.action?.()}
+                                    className="flex h-[92px] w-full items-center justify-center rounded-[18px] border border-black/5 bg-white/55 p-3 shadow-[0_8px_18px_rgba(0,0,0,0.06)] transition-all duration-200"
+                                >
+                                    <div className="flex items-center justify-center text-black">
+                                        {renderIcon(s.icon, "h-7 w-7")}
+                                    </div>
+                                </motion.button>
+                                <h3 className="mt-1.5 text-[10px] font-medium leading-tight text-[#2b2b2b]">{s.label}</h3>
+                            </div>
                         ))}
                     </div>
                 )}
