@@ -5,6 +5,7 @@ export * from "@/lib/hotel/helpers";
 export * from "@/lib/hotel/landing";
 export * from "@/lib/hotel/menu";
 export * from "@/lib/hotel/offers";
+export * from "@/lib/hotel/operations";
 export * from "@/lib/hotel/requests";
 export * from "@/lib/hotel/rooms";
 export * from "@/lib/hotel/types";

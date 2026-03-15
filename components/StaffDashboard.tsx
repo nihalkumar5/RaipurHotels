@@ -8,16 +8,16 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useHotelBranding, useSupabaseRequests, updateSupabaseRequestStatus, HotelRequest, signOut } from "@/utils/store";
 import { startAdminAlert, stopAdminAlert, startWaterAlert, stopWaterAlert, initAudioContext } from "@/utils/audio";
 import { RequestDetailModal } from "@/components/RequestDetailModal";
+import { filterRequestsForDepartment } from "@/lib/hotel/operations";
 
 interface StaffDashboardProps {
     hotelSlug: string;
     department: 'reception' | 'kitchen' | 'housekeeping';
-    allowedTypes: string[];
     title: string;
     icon: React.ReactNode;
 }
 
-export function StaffDashboard({ hotelSlug, department, allowedTypes, title, icon }: StaffDashboardProps) {
+export function StaffDashboard({ hotelSlug, department, title, icon }: StaffDashboardProps) {
     const router = useRouter();
     const { branding, loading: brandingLoading } = useHotelBranding(hotelSlug);
     const requests = useSupabaseRequests(branding?.id);
@@ -52,11 +52,7 @@ export function StaffDashboard({ hotelSlug, department, allowedTypes, title, ico
     }, [audioInitialized, department]);
 
     // Role-based filtering of requests
-    const deptRequests = requests.filter(r => {
-        const type = r.type.toLowerCase();
-        // Check if the request type matches any of the allowed types for this department
-        return allowedTypes.some(allowed => type.includes(allowed.toLowerCase()));
-    });
+    const deptRequests = filterRequestsForDepartment(requests, department);
 
     useEffect(() => {
         if (!audioEnabled) {

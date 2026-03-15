@@ -6,6 +6,7 @@ import React, { useState, useEffect } from "react";
 import { useParams, usePathname, useRouter } from "next/navigation";
 import { useAuth, getUserProfile, UserProfile } from "@/utils/store";
 import { motion, AnimatePresence } from "framer-motion";
+import { getRoleHomeRoute, getRoleFromProfile } from "@/lib/hotel/operations";
 
 export default function AdminLayout({
     children,
@@ -19,6 +20,7 @@ export default function AdminLayout({
     const { user, loading: authLoading } = useAuth();
     const [profile, setProfile] = useState<UserProfile | null>(null);
     const [profileLoading, setProfileLoading] = useState(true);
+    const isDemoMode = process.env.NEXT_PUBLIC_FORCE_DEMO === 'true';
 
     // Check if we are on the login page
     const isLoginPage = pathname?.endsWith('/login') || pathname?.includes('/auth/');
@@ -35,11 +37,11 @@ export default function AdminLayout({
             return;
         }
 
-        if (user) {
-            const fetchProfile = async () => {
-                const { data } = await getUserProfile(user.id);
-                setProfile(data);
-                setProfileLoading(false);
+            if (user) {
+                const fetchProfile = async () => {
+                    const { data } = await getUserProfile(user.id);
+                    setProfile(data);
+                    setProfileLoading(false);
             };
             fetchProfile();
         } else {
@@ -60,15 +62,15 @@ export default function AdminLayout({
         {
             title: "Service Flow",
             items: [
-                { id: 'requests', name: "Active Requests", href: `/${hotelSlug}/admin/requests`, icon: Inbox, roles: ['admin', 'reception'] },
-                { id: 'checkout', name: "Billing & Invoices", href: `/${hotelSlug}/admin/checkout`, icon: Receipt, roles: ['admin', 'reception'] },
-                { id: 'rooms', name: "Room Status", href: `/${hotelSlug}/admin/rooms`, icon: Hotel, roles: ['admin', 'reception'] },
+                { id: 'requests', name: "Active Requests", href: `/${hotelSlug}/admin/requests`, icon: Inbox, roles: ['admin'] },
+                { id: 'checkout', name: "Billing & Invoices", href: `/${hotelSlug}/admin/checkout`, icon: Receipt, roles: ['admin'] },
+                { id: 'rooms', name: "Room Status", href: `/${hotelSlug}/admin/rooms`, icon: Hotel, roles: ['admin'] },
             ]
         },
         {
             title: "Management",
             items: [
-                { id: 'menu', name: "Menu Management", href: `/${hotelSlug}/admin/menu`, icon: Utensils, roles: ['admin', 'kitchen'] },
+                { id: 'menu', name: "Menu Management", href: `/${hotelSlug}/admin/menu`, icon: Utensils, roles: ['admin'] },
                 { id: 'analytics', name: "Analytics", href: `/${hotelSlug}/admin/analytics`, icon: BarChart, roles: ['admin'] },
                 { id: 'staff', name: "Staff Management", href: `/${hotelSlug}/admin/staff`, icon: Users, roles: ['admin'] },
                 { id: 'branding', name: "System Config", href: `/${hotelSlug}/admin/branding`, icon: Settings, roles: ['admin'] },
@@ -76,7 +78,20 @@ export default function AdminLayout({
         }
     ];
 
-    const userRole = profile?.role || (process.env.NEXT_PUBLIC_FORCE_DEMO === 'true' ? 'admin' : 'staff');
+    const userRole = getRoleFromProfile(profile, isDemoMode);
+    const accessibleItems = navSections.flatMap((section) => section.items).filter((item) => item.roles.includes(userRole));
+
+    useEffect(() => {
+        if (authLoading || profileLoading || isLoginPage || userRole === 'staff') {
+            return;
+        }
+
+        const isAllowedPath = accessibleItems.some((item) => pathname === item.href);
+
+        if (!isAllowedPath) {
+            router.replace(getRoleHomeRoute(hotelSlug, userRole));
+        }
+    }, [accessibleItems, authLoading, hotelSlug, isLoginPage, pathname, profileLoading, router, userRole]);
 
     if (isLoginPage) {
         return <main className="min-h-screen bg-slate-50">{children}</main>;
@@ -87,6 +102,22 @@ export default function AdminLayout({
             <div className="min-h-screen flex items-center justify-center bg-[#0F172A]">
                 <Loader2 className="w-8 h-8 text-[#C6A25A] animate-spin" />
             </div>
+        );
+    }
+
+    if (userRole === 'staff') {
+        return (
+            <main className="min-h-screen bg-[#F8F8F8] flex items-center justify-center px-6">
+                <div className="max-w-lg w-full bg-white rounded-[2rem] border border-slate-200 shadow-sm p-10 text-center">
+                    <div className="w-14 h-14 bg-[#0F172A] rounded-2xl flex items-center justify-center mx-auto mb-5">
+                        <ShieldAlert className="w-7 h-7 text-[#C6A25A]" />
+                    </div>
+                    <h1 className="text-2xl font-black text-slate-900">Role Access Pending</h1>
+                    <p className="mt-3 text-sm font-medium text-slate-500">
+                        This account is signed in, but no department has been assigned yet. Ask an admin to set your role as Kitchen, Reception, or Housekeeping.
+                    </p>
+                </div>
+            </main>
         );
     }
 

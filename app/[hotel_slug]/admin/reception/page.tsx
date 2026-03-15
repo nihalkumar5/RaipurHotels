@@ -107,7 +107,6 @@ export default function ReceptionPage() {
                 <StaffDashboard
                     hotelSlug={hotelSlug}
                     department="reception"
-                    allowedTypes={["Checkout", "Information", "Taxi", "Wakeup", "General", "Water"]}
                     title="Reception Desk"
                     icon={<ConciergeBell className="w-8 h-8" />}
                 />

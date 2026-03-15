@@ -14,6 +14,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { 
     useHotelBranding, 
     useSupabaseRequests, 
+    useRooms,
     updateSupabaseRequestStatus, 
     HotelRequest, 
     signOut,
@@ -23,6 +24,7 @@ import {
 import { startAdminAlert, stopAdminAlert, startWaterAlert, stopWaterAlert, initAudioContext } from "@/utils/audio";
 import { RequestDetailModal } from "@/components/RequestDetailModal";
 import { Toast } from "@/components/Toast";
+import { getDepartmentLabel, getRoomSignalSummary, groupRoomsByFloor, normalizeRoomLabel } from "@/lib/hotel/operations";
 
 type LateCheckoutDraft = {
     requestId: string;
@@ -37,6 +39,7 @@ export default function AdminDashboard() {
 
     const { branding, loading } = useHotelBranding(hotelSlug);
     const requests = useSupabaseRequests(branding?.id);
+    const { rooms } = useRooms(branding?.id);
 
     const [audioEnabled, setAudioEnabled] = useState(true);
     const [audioInitialized, setAudioInitialized] = useState(false);
@@ -44,6 +47,8 @@ export default function AdminDashboard() {
     const [activeTab, setActiveTab] = useState<"queue" | "active" | "history">("queue");
     const [searchQuery, setSearchQuery] = useState("");
     const [showMap, setShowMap] = useState(false);
+    const [selectedFloor, setSelectedFloor] = useState<number | null>(null);
+    const [selectedMapRoom, setSelectedMapRoom] = useState<string | null>(null);
     const [lateCheckoutDraft, setLateCheckoutDraft] = useState<LateCheckoutDraft | null>(null);
     const [rejectingRequestId, setRejectingRequestId] = useState<string | null>(null);
     const [submittingAction, setSubmittingAction] = useState(false);
@@ -206,18 +211,60 @@ export default function AdminDashboard() {
     };
 
     // Filter signals
-    const filteredRequests = requests.filter(r => {
-        const type = r.type.toLowerCase();
-        const isReception = !["water", "dining", "restaurant", "room service", "food"].some(t => type.includes(t));
-        return isReception && (
-            r.room.includes(searchQuery) ||
-            r.type.toLowerCase().includes(searchQuery.toLowerCase())
-        );
-    }).sort((a, b) => b.timestamp - a.timestamp);
+    const filteredRequests = requests
+        .filter((request) => {
+            const normalizedQuery = searchQuery.trim().toLowerCase();
+
+            if (!normalizedQuery) {
+                return true;
+            }
+
+            return (
+                normalizeRoomLabel(request.room).includes(normalizedQuery.replace(/\s+/g, "")) ||
+                request.type.toLowerCase().includes(normalizedQuery) ||
+                (request.notes || "").toLowerCase().includes(normalizedQuery)
+            );
+        })
+        .sort((a, b) => b.timestamp - a.timestamp);
 
     const queueSignals = filteredRequests.filter(r => r.status === "Pending");
     const activeSignals = filteredRequests.filter(r => r.status === "Assigned" || r.status === "In Progress");
     const historySignals = filteredRequests.filter(r => r.status === "Completed" || r.status === "Rejected");
+    const floorMap = groupRoomsByFloor(rooms, requests);
+
+    useEffect(() => {
+        if (!floorMap.length) {
+            setSelectedFloor(null);
+            setSelectedMapRoom(null);
+            return;
+        }
+
+        if (!selectedFloor || !floorMap.some((floorGroup) => floorGroup.floor === selectedFloor)) {
+            setSelectedFloor(floorMap[0].floor);
+        }
+    }, [floorMap, selectedFloor]);
+
+    const activeFloorGroup = floorMap.find((floorGroup) => floorGroup.floor === selectedFloor) ?? floorMap[0] ?? null;
+
+    useEffect(() => {
+        if (!activeFloorGroup?.rooms.length) {
+            setSelectedMapRoom(null);
+            return;
+        }
+
+        const roomStillVisible = activeFloorGroup.rooms.some(
+            (room) => normalizeRoomLabel(room.room_number) === selectedMapRoom,
+        );
+
+        if (!selectedMapRoom || !roomStillVisible) {
+            setSelectedMapRoom(normalizeRoomLabel(activeFloorGroup.rooms[0].room_number));
+        }
+    }, [activeFloorGroup, selectedMapRoom]);
+
+    const selectedRoom = activeFloorGroup?.rooms.find(
+        (room) => normalizeRoomLabel(room.room_number) === selectedMapRoom,
+    ) ?? null;
+    const selectedRoomSignals = selectedRoom ? getRoomSignalSummary(requests, selectedRoom.room_number) : null;
 
     const currentSignals = activeTab === "queue" ? queueSignals : (activeTab === "active" ? activeSignals : historySignals);
 
@@ -356,7 +403,9 @@ export default function AdminDashboard() {
                                 <div className="flex items-center justify-between mb-8">
                                     <div className="flex items-center space-x-3">
                                         <div className="w-3 h-3 bg-[#C6A25A] rounded-full animate-pulse shadow-[0_0_10px_#C6A25A]" />
-                                        <span className="text-xs font-black text-white uppercase tracking-[0.2em]">Floor 01 Operations</span>
+                                        <span className="text-xs font-black text-white uppercase tracking-[0.2em]">
+                                            {activeFloorGroup ? `Floor ${String(activeFloorGroup.floor).padStart(2, "0")} Operations` : "Room Operations"}
+                                        </span>
                                     </div>
                                     <div className="flex items-center space-x-4">
                                         <div className="flex items-center space-x-2"><div className="w-2 h-2 bg-slate-700 rounded-full" /><span className="text-[10px] text-slate-400 uppercase font-bold">Standard</span></div>
@@ -364,22 +413,180 @@ export default function AdminDashboard() {
                                         <div className="flex items-center space-x-2"><div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" /><span className="text-[10px] text-slate-400 uppercase font-bold">Signal</span></div>
                                     </div>
                                 </div>
-                                
-                                <div className="grid grid-cols-6 gap-4">
-                                    {Array.from({ length: 12 }).map((_, i) => {
-                                        const roomNum = (101 + i).toString();
-                                        const hasSignal = requests.some(r => r.room === roomNum && r.status === "Pending");
+
+                                <div className="flex flex-wrap gap-3 mb-6">
+                                    {floorMap.map((floorGroup) => {
+                                        const floorPending = floorGroup.rooms.reduce(
+                                            (total, room) => total + getRoomSignalSummary(requests, room.room_number).pendingCount,
+                                            0,
+                                        );
+
                                         return (
-                                            <div 
-                                                key={i} 
-                                                className={`h-24 rounded-2xl border-2 flex flex-col items-center justify-center transition-all ${hasSignal ? 'bg-red-500/10 border-red-500/50 shadow-[0_0_20px_rgba(239,68,68,0.2)]' : 'bg-slate-900 border-slate-800'}`}
+                                            <button
+                                                key={floorGroup.floor}
+                                                onClick={() => setSelectedFloor(floorGroup.floor)}
+                                                className={`px-4 py-2 rounded-2xl border text-xs font-black uppercase tracking-widest transition-all ${
+                                                    selectedFloor === floorGroup.floor
+                                                        ? "bg-[#C6A25A] text-[#0F172A] border-[#C6A25A]"
+                                                        : "bg-slate-900 text-slate-300 border-slate-700 hover:border-slate-500"
+                                                }`}
                                             >
-                                                <span className={`text-lg font-black ${hasSignal ? 'text-white' : 'text-slate-500'}`}>{roomNum}</span>
-                                                {hasSignal && <Bell className="w-4 h-4 text-red-500 mt-2 animate-bounce" />}
-                                            </div>
+                                                Floor {String(floorGroup.floor).padStart(2, "0")} {floorPending > 0 ? `• ${floorPending} open` : ""}
+                                            </button>
                                         );
                                     })}
                                 </div>
+
+                                {activeFloorGroup ? (
+                                    <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1.4fr)_360px] gap-6">
+                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                            {activeFloorGroup.rooms.map((room) => {
+                                                const roomSignals = getRoomSignalSummary(requests, room.room_number);
+                                                const isSelected = normalizeRoomLabel(room.room_number) === selectedMapRoom;
+
+                                                return (
+                                                    <button
+                                                        key={room.id}
+                                                        onClick={() => setSelectedMapRoom(normalizeRoomLabel(room.room_number))}
+                                                        className={`min-h-[132px] rounded-3xl border p-4 text-left transition-all ${
+                                                            isSelected
+                                                                ? "bg-[#111827] border-[#C6A25A] shadow-[0_0_0_1px_rgba(198,162,90,0.25)]"
+                                                                : "bg-slate-900 border-slate-800 hover:border-slate-600"
+                                                        }`}
+                                                    >
+                                                        <div className="flex items-start justify-between">
+                                                            <div>
+                                                                <p className={`text-lg font-black ${isSelected ? "text-white" : "text-slate-100"}`}>
+                                                                    {room.room_number}
+                                                                </p>
+                                                                <p className="mt-1 text-[10px] font-black uppercase tracking-widest text-slate-500">
+                                                                    {room.is_occupied ? "Occupied" : "Available"}
+                                                                </p>
+                                                            </div>
+                                                            <div className="flex items-center gap-2">
+                                                                {roomSignals.pendingCount > 0 && (
+                                                                    <span className="min-w-6 h-6 px-2 rounded-full bg-red-500/15 text-red-300 text-[10px] font-black flex items-center justify-center">
+                                                                        {roomSignals.pendingCount}
+                                                                    </span>
+                                                                )}
+                                                                {roomSignals.activeCount > 0 && (
+                                                                    <span className="min-w-6 h-6 px-2 rounded-full bg-blue-500/15 text-blue-300 text-[10px] font-black flex items-center justify-center">
+                                                                        {roomSignals.activeCount}
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                        </div>
+
+                                                        <div className="mt-6 space-y-2">
+                                                            {roomSignals.requests.slice(0, 2).map((request) => (
+                                                                <div key={request.id} className="rounded-2xl bg-white/5 px-3 py-2">
+                                                                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">
+                                                                        {getDepartmentLabel(request)}
+                                                                    </p>
+                                                                    <p className="mt-1 text-xs font-bold text-white line-clamp-1">{request.type}</p>
+                                                                </div>
+                                                            ))}
+                                                            {roomSignals.requests.length === 0 && (
+                                                                <p className="text-xs font-bold text-slate-500">No live requests in this room.</p>
+                                                            )}
+                                                        </div>
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+
+                                        <div className="rounded-3xl border border-slate-800 bg-black/20 p-6">
+                                            {selectedRoom && selectedRoomSignals ? (
+                                                <>
+                                                    <div className="flex items-start justify-between gap-4">
+                                                        <div>
+                                                            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Selected Room</p>
+                                                            <h3 className="mt-2 text-3xl font-black text-white">Room {selectedRoom.room_number}</h3>
+                                                            <p className="mt-2 text-sm font-medium text-slate-400">
+                                                                {selectedRoom.is_occupied ? "Guest currently checked in" : "Ready for next arrival"}
+                                                            </p>
+                                                        </div>
+                                                        <div className={`px-3 py-2 rounded-2xl text-[10px] font-black uppercase tracking-widest ${
+                                                            selectedRoom.is_occupied
+                                                                ? "bg-green-500/15 text-green-300"
+                                                                : "bg-slate-800 text-slate-300"
+                                                        }`}>
+                                                            {selectedRoom.is_occupied ? "Occupied" : "Available"}
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="mt-6 grid grid-cols-2 gap-3">
+                                                        <div className="rounded-2xl bg-white/5 p-4">
+                                                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Open Requests</p>
+                                                            <p className="mt-2 text-2xl font-black text-white">
+                                                                {selectedRoomSignals.pendingCount + selectedRoomSignals.activeCount}
+                                                            </p>
+                                                        </div>
+                                                        <div className="rounded-2xl bg-white/5 p-4">
+                                                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Checkout</p>
+                                                            <p className="mt-2 text-sm font-black text-white">
+                                                                {selectedRoom.checkout_time || selectedRoom.checkout_date || "Not set"}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="mt-6 space-y-3">
+                                                        <div className="flex items-center justify-between">
+                                                            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Live Room Activity</p>
+                                                            <button
+                                                                onClick={() => setSearchQuery(normalizeRoomLabel(selectedRoom.room_number))}
+                                                                className="text-[10px] font-black uppercase tracking-widest text-[#C6A25A]"
+                                                            >
+                                                                Show In Feed
+                                                            </button>
+                                                        </div>
+
+                                                        {selectedRoomSignals.requests.length > 0 ? (
+                                                            selectedRoomSignals.requests.map((request) => (
+                                                                <button
+                                                                    key={request.id}
+                                                                    onClick={() => setSelectedRequest(request)}
+                                                                    className="w-full rounded-2xl border border-slate-800 bg-slate-950/60 p-4 text-left hover:border-[#C6A25A]/40 transition-all"
+                                                                >
+                                                                    <div className="flex items-center justify-between gap-4">
+                                                                        <div>
+                                                                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">
+                                                                                {getDepartmentLabel(request)}
+                                                                            </p>
+                                                                            <p className="mt-1 text-sm font-black text-white">{request.type}</p>
+                                                                            <p className="mt-1 text-xs text-slate-400">{request.time}</p>
+                                                                        </div>
+                                                                        <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${
+                                                                            request.status === "Pending"
+                                                                                ? "bg-red-500/15 text-red-300"
+                                                                                : "bg-blue-500/15 text-blue-300"
+                                                                        }`}>
+                                                                            {request.status}
+                                                                        </span>
+                                                                    </div>
+                                                                </button>
+                                                            ))
+                                                        ) : (
+                                                            <div className="rounded-2xl border border-dashed border-slate-700 p-6 text-center">
+                                                                <p className="text-sm font-bold text-slate-400">No active work in this room right now.</p>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </>
+                                            ) : (
+                                                <div className="h-full flex items-center justify-center text-center">
+                                                    <div>
+                                                        <p className="text-sm font-bold text-slate-400">Select a room to inspect live requests and occupancy.</p>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="rounded-3xl border border-dashed border-slate-700 p-10 text-center">
+                                        <p className="text-sm font-bold text-slate-400">No rooms available yet. Add rooms to activate the floor map.</p>
+                                    </div>
+                                )}
                                 <div className="absolute inset-0 bg-gradient-to-t from-[#0F172A] via-transparent to-transparent pointer-events-none opacity-40" />
                             </div>
                         </motion.div>
@@ -436,6 +643,9 @@ export default function AdminDashboard() {
                                                     <Bell className="w-4 h-4 mr-2 text-[#C6A25A]" />
                                                     {signal.type}
                                                 </div>
+                                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-2">
+                                                    {getDepartmentLabel(signal)}
+                                                </p>
                                                 {signal.notes && <p className="text-xs text-slate-500 font-medium mt-2 italic line-clamp-2">"{signal.notes}"</p>}
                                             </div>
 
