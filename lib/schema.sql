@@ -60,6 +60,8 @@ CREATE TABLE IF NOT EXISTS rooms (
     room_number TEXT NOT NULL,
     booking_pin TEXT, -- 4 to 6 digit code generated on check-in
     is_occupied BOOLEAN DEFAULT FALSE,
+    checkout_date TEXT,
+    checkout_time TEXT,
     num_guests INTEGER,
     checked_in_at BIGINT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
@@ -258,6 +260,8 @@ END $$;
 
 -- 7. WhatsApp Automation & Late Checkout (Migration)
 ALTER TABLE hotels ADD COLUMN IF NOT EXISTS welcome_message TEXT;
+ALTER TABLE rooms ADD COLUMN IF NOT EXISTS checkout_date TEXT;
+ALTER TABLE rooms ADD COLUMN IF NOT EXISTS checkout_time TEXT;
 ALTER TABLE hotels ADD COLUMN IF NOT EXISTS checkout_message TEXT;
 ALTER TABLE hotels ADD COLUMN IF NOT EXISTS google_review_link TEXT;
 ALTER TABLE hotels ADD COLUMN IF NOT EXISTS late_checkout_phone TEXT;

@@ -1,7 +1,8 @@
 import React from "react";
 import { CheckCircle2, Clock, Loader2, PlayCircle, XCircle } from "lucide-react";
+import type { RequestStatus } from "@/lib/hotel/types";
 
-export type RequestStatus = "Pending" | "Assigned" | "In Progress" | "Completed" | "Rejected";
+export type { RequestStatus } from "@/lib/hotel/types";
 
 export function StatusBadge({ status }: { status: RequestStatus }) {
     const statusConfig = {

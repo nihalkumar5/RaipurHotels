@@ -1,0 +1,201 @@
+import { useEffect, useState } from "react";
+
+import { convertGDriveLink, isDemoMode } from "@/lib/hotel/helpers";
+import type { HotelBranding } from "@/lib/hotel/types";
+import { supabase } from "@/lib/supabaseClient";
+
+type HotelRow = {
+    id: string;
+    slug: string;
+    name: string;
+    logo?: string | null;
+    logo_image?: string | null;
+    primary_color?: string | null;
+    accent_color?: string | null;
+    wifi_name?: string | null;
+    wifi_password?: string | null;
+    reception_phone?: string | null;
+    breakfast_start?: string | null;
+    breakfast_end?: string | null;
+    lunch_start?: string | null;
+    lunch_end?: string | null;
+    dinner_start?: string | null;
+    dinner_end?: string | null;
+    late_checkout_phone?: string | null;
+    late_checkout_charge_1?: string | null;
+    late_checkout_charge_2?: string | null;
+    late_checkout_charge_3?: string | null;
+    checkout_message?: string | null;
+    google_review_link?: string | null;
+    welcome_message?: string | null;
+};
+
+const DEMO_BRANDING: Record<string, Partial<HotelBranding>> = {
+    "grand-royale": { id: "00000000-0000-0000-0000-000000000001", name: "The Grand Royale", primaryColor: "#1e293b", accentColor: "#2563eb" },
+    "azure-bay": { id: "00000000-0000-0000-0000-000000000002", name: "Azure Bay Resort", primaryColor: "#0891b2", accentColor: "#0ea5e9" },
+    "mountain-lodge": { id: "00000000-0000-0000-0000-000000000003", name: "Mountain Lodge", primaryColor: "#166534", accentColor: "#22c55e" },
+    babylon: { id: "00000000-0000-0000-0000-000000000004", name: "Babylon Raipur", primaryColor: "#1e3a8a", accentColor: "#3b82f6" },
+};
+
+const mapHotelRowToBranding = (row: HotelRow): HotelBranding => ({
+    id: row.id,
+    slug: row.slug,
+    name: row.name,
+    logo: row.logo ?? undefined,
+    logoImage: row.logo_image ?? undefined,
+    primaryColor: row.primary_color ?? "#2563eb",
+    accentColor: row.accent_color ?? "#3b82f6",
+    wifiName: row.wifi_name ?? undefined,
+    wifiPassword: row.wifi_password ?? undefined,
+    receptionPhone: row.reception_phone ?? undefined,
+    breakfastStart: row.breakfast_start ?? undefined,
+    breakfastEnd: row.breakfast_end ?? undefined,
+    lunchStart: row.lunch_start ?? undefined,
+    lunchEnd: row.lunch_end ?? undefined,
+    dinnerStart: row.dinner_start ?? undefined,
+    dinnerEnd: row.dinner_end ?? undefined,
+    lateCheckoutPhone: row.late_checkout_phone ?? undefined,
+    lateCheckoutCharge1: row.late_checkout_charge_1 ?? undefined,
+    lateCheckoutCharge2: row.late_checkout_charge_2 ?? undefined,
+    lateCheckoutCharge3: row.late_checkout_charge_3 ?? undefined,
+    checkoutMessage: row.checkout_message ?? undefined,
+    googleReviewLink: row.google_review_link ?? undefined,
+    welcomeMessage: row.welcome_message ?? undefined,
+});
+
+const buildDemoBranding = (slug: string): HotelBranding => {
+    const preset = DEMO_BRANDING[slug];
+
+    if (preset) {
+        return {
+            slug,
+            primaryColor: "#2563eb",
+            accentColor: "#3b82f6",
+            ...preset,
+        } as HotelBranding;
+    }
+
+    return {
+        id: `demo-${slug}`,
+        slug,
+        name: slug.charAt(0).toUpperCase() + slug.slice(1).replace(/-/g, " "),
+        primaryColor: "#2563eb",
+        accentColor: "#3b82f6",
+        receptionPhone: "+91 99999 99999",
+    };
+};
+
+export function useHotelBranding(slug: string | undefined) {
+    const [branding, setBranding] = useState<HotelBranding | null>(null);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        let isActive = true;
+
+        const loadBranding = async () => {
+            if (!slug) {
+                if (isActive) {
+                    setLoading(false);
+                }
+                return;
+            }
+
+            try {
+                const { data } = await supabase.from("hotels").select("*").eq("slug", slug).single();
+
+                if (!isActive) {
+                    return;
+                }
+
+                if (data) {
+                    setBranding(mapHotelRowToBranding(data as HotelRow));
+                } else if (isDemoMode()) {
+                    setBranding(buildDemoBranding(slug));
+                } else {
+                    setBranding(null);
+                }
+            } catch {
+                if (isActive) {
+                    setBranding(isDemoMode() ? buildDemoBranding(slug) : null);
+                }
+            } finally {
+                if (isActive) {
+                    setLoading(false);
+                }
+            }
+        };
+
+        void loadBranding();
+
+        if (!slug) {
+            return () => {
+                isActive = false;
+            };
+        }
+
+        const subscription = supabase
+            .channel(`hotel_branding_${slug}`)
+            .on(
+                "postgres_changes",
+                {
+                    event: "*",
+                    schema: "public",
+                    table: "hotels",
+                    filter: `slug=eq.${slug}`,
+                },
+                (payload: { new: HotelRow }) => {
+                    const updatedRow = payload.new as HotelRow | undefined;
+                    if (updatedRow && isActive) {
+                        setBranding(mapHotelRowToBranding(updatedRow));
+                    }
+                },
+            )
+            .subscribe();
+
+        return () => {
+            isActive = false;
+            supabase.removeChannel(subscription);
+        };
+    }, [slug]);
+
+    return { branding, loading };
+}
+
+export async function saveHotelBranding(id: string, updates: Partial<HotelBranding>) {
+    if (isDemoMode()) {
+        return {
+            data: null,
+            error: {
+                message: "Application is in Demo Mode. To save branding changes, set Supabase credentials in .env.local.",
+                code: "DEMO_MODE",
+            },
+        };
+    }
+
+    return supabase
+        .from("hotels")
+        .update({
+            name: updates.name,
+            logo: convertGDriveLink(updates.logo ?? ""),
+            logo_image: convertGDriveLink(updates.logoImage ?? ""),
+            primary_color: updates.primaryColor,
+            accent_color: updates.accentColor,
+            wifi_name: updates.wifiName,
+            wifi_password: updates.wifiPassword,
+            reception_phone: updates.receptionPhone,
+            breakfast_start: updates.breakfastStart,
+            breakfast_end: updates.breakfastEnd,
+            lunch_start: updates.lunchStart,
+            lunch_end: updates.lunchEnd,
+            dinner_start: updates.dinnerStart,
+            dinner_end: updates.dinnerEnd,
+            late_checkout_phone: updates.lateCheckoutPhone,
+            late_checkout_charge_1: updates.lateCheckoutCharge1,
+            late_checkout_charge_2: updates.lateCheckoutCharge2,
+            late_checkout_charge_3: updates.lateCheckoutCharge3,
+            checkout_message: updates.checkoutMessage,
+            google_review_link: updates.googleReviewLink,
+            welcome_message: updates.welcomeMessage,
+        })
+        .eq("id", id);
+}
