@@ -7,7 +7,6 @@ import {
     ChevronRight,
     Phone,
     Sparkle,
-    Sparkles,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useParams, useRouter } from "next/navigation";
@@ -242,15 +241,15 @@ export default function StatusPage() {
                                 <div
                                     className={`h-3.5 w-3.5 rounded-full border-2 ${
                                         step.active
-                                            ? "border-[#CFA46A] bg-[#CFA46A]"
-                                            : "border-[#DBD4CA] bg-white"
+                                            ? "border-[#db8d3f] bg-[#db8d3f]"
+                                            : "border-[#DBD4CA] bg-white/75"
                                     }`}
                                 />
                                 {!isLast && (
                                     <div
                                         className={`mt-1 h-9 w-px ${
                                             step.active && steps[index + 1]?.active
-                                                ? "bg-[#CFA46A]"
+                                                ? "bg-[#db8d3f]"
                                                 : "bg-[#E9E3DA]"
                                         }`}
                                     />
@@ -276,7 +275,7 @@ export default function StatusPage() {
                 key={request.id}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="overflow-hidden rounded-[22px] border border-[#EEE7DC] bg-white p-6 shadow-[0_8px_24px_rgba(0,0,0,0.06)]"
+                className="overflow-hidden rounded-[22px] border border-[#ffc896]/45 bg-[linear-gradient(145deg,rgba(255,199,143,0.35),rgba(255,156,71,0.2))] p-6 shadow-[0_16px_32px_rgba(70,59,49,0.2)] backdrop-blur-[18px]"
             >
                 <div className="flex items-start justify-between gap-4">
                     <div>
@@ -296,7 +295,7 @@ export default function StatusPage() {
                     )}
                 </div>
 
-                <div className="mt-6 flex gap-10 rounded-[14px] bg-[#F6F2EC] p-4">
+                <div className="mt-6 flex gap-10 rounded-[14px] border border-white/35 bg-white/35 p-4 backdrop-blur-[8px]">
                     <div>
                         <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Requested</p>
                         <p className="mt-1 text-[16px] font-semibold text-[#1F1F1F]">{request.time}</p>
@@ -308,20 +307,20 @@ export default function StatusPage() {
                 </div>
 
                 {request.notes && (
-                    <div className="mt-5 rounded-[16px] border border-[#F1E7D8] bg-[#FFFDF8] p-4">
+                    <div className="mt-5 rounded-[16px] border border-white/40 bg-white/40 p-4 backdrop-blur-[8px]">
                         <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Request Note</p>
                         <p className="mt-2 text-[13px] leading-relaxed text-slate-600">{request.notes}</p>
                     </div>
                 )}
 
-                <div className="mt-6 rounded-[18px] border border-[#F1E7D8] bg-[#FFFCF6] p-4">
+                <div className="mt-6 rounded-[18px] border border-white/40 bg-white/35 p-4 backdrop-blur-[10px]">
                     <div className="flex items-center justify-between">
                         <div>
                             <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Staff Coming To Your Room</p>
                             <p className="mt-1 text-[15px] font-semibold text-[#1F1F1F]">{staff.team}</p>
                             <p className="mt-1 text-[12px] text-slate-500">{staff.role}</p>
                         </div>
-                        <span className="rounded-full bg-[#F3E6D3] px-3 py-1.5 text-[12px] font-semibold text-[#9C6B2E]">
+                        <span className="rounded-full border border-[#ffcf9f]/70 bg-[linear-gradient(145deg,rgba(255,200,145,0.55),rgba(255,158,86,0.45))] px-3 py-1.5 text-[12px] font-semibold text-[#8f4e12]">
                             Arriving in {staff.eta}
                         </span>
                     </div>
@@ -355,7 +354,7 @@ export default function StatusPage() {
                         {supportPhone ? (
                             <a
                                 href={`tel:${supportPhone}`}
-                                className="flex items-center justify-center gap-2 rounded-[16px] border border-[#E8DECE] bg-white px-4 py-3 text-[12px] font-semibold text-[#1F1F1F]"
+                                className="flex items-center justify-center gap-2 rounded-[16px] border border-[#ffc896]/60 bg-white/45 px-4 py-3 text-[12px] font-semibold text-[#2f2218] backdrop-blur-[10px]"
                             >
                                 <Phone className="h-4 w-4" />
                                 Call Reception
@@ -364,7 +363,7 @@ export default function StatusPage() {
                             <button
                                 type="button"
                                 disabled
-                                className="flex items-center justify-center gap-2 rounded-[16px] border border-[#E8DECE] bg-[#F8F5EF] px-4 py-3 text-[12px] font-semibold text-slate-400"
+                                className="flex items-center justify-center gap-2 rounded-[16px] border border-[#ffd8b7]/70 bg-white/25 px-4 py-3 text-[12px] font-semibold text-slate-500 backdrop-blur-[8px]"
                             >
                                 <Phone className="h-4 w-4" />
                                 Call Reception
@@ -377,12 +376,14 @@ export default function StatusPage() {
     };
 
     return (
-        <div className="min-h-screen bg-[#F8F5EF] px-5 pb-40 pt-8 text-slate-900">
+        <div className="relative min-h-screen overflow-hidden bg-[radial-gradient(circle_at_top,_#d6d7db_0%,_#b9bcc3_55%,_#aeb1b8_100%)] px-5 pb-40 pt-8 text-slate-900">
+            <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(165deg,rgba(255,255,255,0.22)_0%,rgba(255,255,255,0.06)_40%,rgba(255,145,58,0.09)_100%)]" />
+            <div className="relative">
             <div className="mb-8 flex items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
                     <button
                         onClick={() => router.back()}
-                        className="flex h-11 w-11 items-center justify-center rounded-2xl border border-white bg-white shadow-sm transition-transform active:scale-95"
+                        className="flex h-11 w-11 items-center justify-center rounded-2xl border border-[#ffc896]/55 bg-white/45 shadow-[0_10px_20px_rgba(97,77,58,0.2)] backdrop-blur-[10px] transition-transform active:scale-95"
                     >
                         <ArrowLeft className="h-5 w-5 text-[#1F1F1F]" />
                     </button>
@@ -393,8 +394,8 @@ export default function StatusPage() {
                     </div>
                 </div>
                 {primaryRequest && (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-[#FDECEC] px-3 py-1.5 text-[12px] font-black uppercase tracking-[0.12em] text-[#E5484D]">
-                        <span className="h-2 w-2 rounded-full bg-[#E5484D] animate-[pulse_2s_infinite]" />
+                    <span className="inline-flex items-center gap-1 rounded-full border border-[#ffc896]/70 bg-[linear-gradient(145deg,rgba(255,194,138,0.45),rgba(255,149,62,0.35))] px-3 py-1.5 text-[12px] font-black uppercase tracking-[0.12em] text-[#8f4e12] backdrop-blur-[10px]">
+                        <span className="h-2 w-2 rounded-full bg-[#d57c22] animate-[pulse_2s_infinite]" />
                         Live
                     </span>
                 )}
@@ -414,7 +415,7 @@ export default function StatusPage() {
                                     <button
                                         key={request.id}
                                         onClick={() => setSelectedRequestId(request.id)}
-                                        className="flex w-full items-center justify-between rounded-[18px] border border-[#EEE7DC] bg-white p-4 text-left shadow-[0_10px_25px_rgba(0,0,0,0.04)]"
+                                        className="flex w-full items-center justify-between rounded-[18px] border border-[#ffcda0]/45 bg-white/35 p-4 text-left shadow-[0_12px_24px_rgba(72,59,45,0.16)] backdrop-blur-[12px]"
                                     >
                                         <div>
                                             <p className="font-serif text-[18px] text-[#1F1F1F]">{request.type}</p>
@@ -435,17 +436,17 @@ export default function StatusPage() {
                     )}
                 </div>
             ) : (
-                <div className="relative overflow-hidden rounded-[22px] border border-[#EEE7DC] bg-[linear-gradient(180deg,#FFFFFF,#F9F6F1)] p-7 text-center shadow-[0_12px_30px_rgba(0,0,0,0.08)]">
-                    <div className="pointer-events-none absolute inset-0 opacity-10">
-                        <div className="absolute -right-2 top-6 text-[64px] text-[#CFA46A]">🛎️</div>
-                        <div className="absolute left-3 bottom-5 text-[56px] text-[#D8BA8B]">☕</div>
+                <div className="relative overflow-hidden rounded-[22px] border border-[#ffc896]/45 bg-[linear-gradient(150deg,rgba(255,196,138,0.34),rgba(255,151,61,0.2))] p-7 text-center shadow-[0_18px_35px_rgba(68,56,44,0.2)] backdrop-blur-[16px]">
+                    <div className="pointer-events-none absolute inset-0 opacity-15">
+                        <div className="absolute -right-2 top-6 text-[64px] text-[#d48638]">🛎️</div>
+                        <div className="absolute left-3 bottom-5 text-[56px] text-[#ce7f2e]">☕</div>
                     </div>
                     <motion.div
                         animate={{ opacity: [0.7, 1, 0.7], scale: [1, 1.08, 1] }}
                         transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-                        className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[#FBF5EA]"
+                        className="mx-auto flex h-14 w-14 items-center justify-center rounded-full border border-[#ffc996]/60 bg-white/50"
                     >
-                        <Sparkle className="h-7 w-7 text-[#CFA46A]" />
+                        <Sparkle className="h-7 w-7 text-[#cf7d27]" />
                     </motion.div>
                     <p className="mt-4 font-serif text-[28px] text-[#1F1F1F]">{completionMessage.heading}</p>
                     <p className="mx-auto mt-3 max-w-[240px] text-[14px] leading-6 text-slate-600">
@@ -464,7 +465,7 @@ export default function StatusPage() {
                         <button
                             type="button"
                             onClick={() => router.push(`/${hotelSlug}/guest/services`)}
-                            className="mt-3 inline-flex items-center justify-center rounded-[16px] bg-[#CFA46A] px-5 py-3 text-[12px] font-semibold text-white shadow-[0_10px_20px_rgba(207,164,106,0.22)] transition-transform active:scale-95"
+                            className="mt-3 inline-flex items-center justify-center rounded-[16px] border border-[#ffbe87]/60 bg-[linear-gradient(145deg,rgba(255,170,96,0.92),rgba(244,130,39,0.88))] px-5 py-3 text-[12px] font-semibold text-white shadow-[0_14px_25px_rgba(105,67,28,0.28)] transition-transform active:scale-95"
                         >
                             Request Service
                         </button>
@@ -481,12 +482,12 @@ export default function StatusPage() {
                         {completedRequests.map((request) => (
                             <div
                                 key={request.id}
-                                className="rounded-[18px] border border-[#EEE7DC] bg-white px-4 py-3"
+                                className="rounded-[18px] border border-[#ffcda0]/45 bg-white/35 px-4 py-3 backdrop-blur-[12px]"
                             >
                                 <div className="flex items-start justify-between gap-4">
                                     <div className="flex items-start gap-3">
-                                        <div className="mt-0.5 flex h-8 w-8 items-center justify-center rounded-full bg-[#F7F1E5]">
-                                            <CheckCircle2 className="h-4 w-4 text-[#B98945]" />
+                                        <div className="mt-0.5 flex h-8 w-8 items-center justify-center rounded-full border border-[#ffcf9e]/60 bg-white/50">
+                                            <CheckCircle2 className="h-4 w-4 text-[#cb7b2a]" />
                                         </div>
                                         <div>
                                             <p className="text-[14px] font-semibold text-[#1F1F1F]">
@@ -496,7 +497,7 @@ export default function StatusPage() {
                                             <p className="mt-1 text-[11px] text-slate-400">{request.time}</p>
                                         </div>
                                     </div>
-                                    <span className="rounded-full bg-[#ECF9F1] px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-[#1C8B57]">
+                                    <span className="rounded-full border border-[#ffcf9e]/60 bg-[linear-gradient(145deg,rgba(255,190,127,0.44),rgba(255,150,56,0.35))] px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-[#8f4e12]">
                                         Delivered
                                     </span>
                                 </div>
@@ -505,6 +506,7 @@ export default function StatusPage() {
                     </div>
                 </div>
             )}
+            </div>
         </div>
     );
 }
