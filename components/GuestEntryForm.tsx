@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, User, Phone, Home, Calendar, Send, Loader2, CheckCircle2, MessageSquare } from "lucide-react";
 import { addGuest, HotelBranding } from "@/utils/store";
+import { buildGuestWelcomeMessage, buildWhatsAppUrl } from "@/lib/hotel/whatsapp";
 
 interface GuestEntryFormProps {
     isOpen: boolean;
@@ -30,19 +31,16 @@ export default function GuestEntryForm({ isOpen, onClose, branding, onSuccess, i
     }, [isOpen, initialRoomNumber]);
 
     const generateWhatsAppUrl = (name: string, phone: string, room: string, pin?: string) => {
-        const line1 = `*Namaste ${name}!* 👋\n\n`;
-        const line2 = `Welcome to *${branding.name}*. 🏨 We are absolutely delighted to have you with us.\n\n`;
-        const line3 = `Your sanctuary for this stay is *Room ${room}*. 🔑\n\n`;
-        const customMessage = branding.welcomeMessage || "We hope you have a wonderful stay.";
-        const footer = `\n\nWe are here to make your stay magical. ✨`;
-
-        const message = `${line1}${line2}${line3}${customMessage}${footer}`;
-
-        const encoded = encodeURIComponent(message);
-        const numericPhone = phone.replace(/[^0-9]/g, '');
-        const finalPhone = (numericPhone.length === 10) ? `91${numericPhone}` : numericPhone;
-
-        return `https://wa.me/${finalPhone}?text=${encoded}`;
+        return buildWhatsAppUrl(
+            phone,
+            buildGuestWelcomeMessage({
+                guestName: name,
+                hotelName: branding.name,
+                roomNumber: room,
+                welcomeMessage: branding.welcomeMessage,
+                pin,
+            }),
+        );
     };
 
 
@@ -67,7 +65,9 @@ export default function GuestEntryForm({ isOpen, onClose, branding, onSuccess, i
 
             // Trigger WhatsApp
             const waUrl = generateWhatsAppUrl(formData.name, formData.phone, formData.room_number, pin);
-            window.open(waUrl, "_blank");
+            if (waUrl) {
+                window.open(waUrl, "_blank");
+            }
 
             setTimeout(() => {
                 setSuccess(false);

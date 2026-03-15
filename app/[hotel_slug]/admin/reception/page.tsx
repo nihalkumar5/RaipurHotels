@@ -7,6 +7,7 @@ import { ConciergeBell, Users, LayoutGrid, List, Plus, MapPin, User, Phone, Chec
 import { useHotelBranding, getHotelGuests, getHotelRooms, deleteGuest, Guest, Room, supabase } from "@/utils/store";
 import { motion, AnimatePresence } from "framer-motion";
 import GuestEntryForm from "@/components/GuestEntryForm";
+import { buildGuestWelcomeMessage, buildWhatsAppUrl, formatWhatsAppPhone } from "@/lib/hotel/whatsapp";
 
 export default function ReceptionPage() {
     const params = useParams();
@@ -63,9 +64,7 @@ export default function ReceptionPage() {
                 }
 
                 const encodedMessage = encodeURIComponent(message);
-                const numericPhone = guest.phone.replace(/[^0-9]/g, '');
-                // Ensure 91 prefix if missing and it's 10 digits
-                const finalPhone = (numericPhone.length === 10) ? `91${numericPhone}` : numericPhone;
+                const finalPhone = formatWhatsAppPhone(guest.phone);
 
                 const whatsappUrl = `https://wa.me/${finalPhone}?text=${encodedMessage}`;
                 window.open(whatsappUrl, '_blank');
@@ -87,17 +86,19 @@ export default function ReceptionPage() {
         } else if (type === 'checkout') {
             msg = `Hello ${guest.name} 👋\n\nJust a reminder for your checkout today. Hope you had a comfortable stay at ${branding?.name}!`;
         } else {
-            const line1 = `*Namaste ${guest.name}!* 👋\n\n`;
-            const line2 = `Welcome to *${branding?.name}*. 🏨 We are absolutely delighted to have you with us.\n\n`;
-            const line3 = `Your sanctuary for this stay is *Room ${guest.room_number}*. 🔑\n\n`;
-            const customMsg = branding?.welcomeMessage || "We hope you have a wonderful stay.";
-            const footer = `\n\nWe are here to make your stay magical. ✨`;
-            msg = `${line1}${line2}${line3}${customMsg}${footer}`;
+            msg = buildGuestWelcomeMessage({
+                guestName: guest.name,
+                hotelName: branding?.name || "Your Hotel",
+                roomNumber: guest.room_number,
+                welcomeMessage: branding?.welcomeMessage,
+            });
         }
 
 
-        const url = `https://wa.me/${finalPhone}?text=${encodeURIComponent(msg)}`;
-        window.open(url, "_blank");
+        const url = buildWhatsAppUrl(finalPhone, msg);
+        if (url) {
+            window.open(url, "_blank");
+        }
     };
 
     if (view === 'requests') {
