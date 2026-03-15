@@ -368,30 +368,22 @@ export default function GuestDashboard() {
                 transition={{ delay: 0.6 }}
                 className="mb-8 px-4"
             >
-                <div className="relative overflow-hidden rounded-[24px] border border-white/30 p-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.4),0_20px_60px_rgba(0,0,0,0.15)]">
+                <div className="relative overflow-hidden rounded-[24px] border border-white/25 p-6 shadow-[0_30px_60px_rgba(0,0,0,0.15)]">
                     <div
                         className="absolute inset-0"
                         style={{
-                            background: "linear-gradient(135deg, #E7DCCB, #D9C9B2)",
+                            background: "linear-gradient(180deg, #E8DCCB, #E2D5C2)",
                         }}
                     />
-                    {/* Decorative illustration */}
-                    <div className="pointer-events-none absolute -bottom-5 -right-10 z-0 h-[220px] w-[220px] opacity-35">
-                        <img 
-                            src="/images/luxury_hotel_ultra_premium_bg.png" 
-                            alt="Background Illustration"
-                            className="h-full w-full object-cover"
-                        />
-                    </div>
 
                     {/* 2. Foreground Layer (Header & Tiles) */}
                     <div className="relative z-10">
-                        <div className="mb-5">
-                            <h2 className="mb-2 font-serif text-[28px] font-semibold leading-tight text-[#1F1F1F]">Quick Services</h2>
-                            <p className="text-[12px] font-semibold uppercase tracking-[0.16em] text-[#1F1F1F]/60">Personalized for your stay</p>
+                        <div className="mb-[18px]">
+                            <h2 className="mb-1.5 font-serif text-[24px] font-semibold leading-tight text-[#1F1F1F]">Quick Services</h2>
+                            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#1F1F1F]/60">Personalized for your stay</p>
                         </div>
                         
-                        <div className="mt-5 grid grid-cols-2 gap-4">
+                        <div className="mt-[18px] grid grid-cols-2 gap-[14px] justify-items-center">
                             {[
                                 { 
                                     label: "Reception", 
@@ -422,19 +414,19 @@ export default function GuestDashboard() {
                                 <motion.button
                                     key={i}
                                     whileHover={{ y: -3, boxShadow: "0 18px 40px rgba(0,0,0,0.15)" }}
-                                    whileTap={{ scale: 0.97 }}
+                                    whileTap={{ scale: 0.96 }}
                                     transition={{ type: "spring", stiffness: 400, damping: 25 }}
                                     onClick={() => handleTileClick(service)}
-                                    className="group/tile relative flex h-[100px] w-full flex-col items-center justify-center gap-2 overflow-hidden rounded-[20px] border border-white/50 bg-white/85 p-[18px] shadow-[0_12px_30px_rgba(0,0,0,0.08)] backdrop-blur-[8px] transition-all duration-200 [transform:perspective(1000px)_rotateX(2deg)]"
+                                    className="group/tile relative flex h-[84px] w-full max-w-[96px] flex-col items-center justify-center gap-1.5 overflow-hidden rounded-[18px] border border-white/45 bg-white/35 p-4 shadow-[0_10px_30px_rgba(0,0,0,0.08),inset_0_1px_0_rgba(255,255,255,0.6)] backdrop-blur-[14px] transition-all duration-200 [transform:translateY(-6px)]"
                                 >
-                                    <div className="absolute inset-0 bg-gradient-to-br from-white/40 to-transparent opacity-0 group-hover/tile:opacity-100 transition-opacity duration-500" />
+                                    <div className="absolute inset-0 bg-gradient-to-br from-white/35 to-transparent opacity-0 transition-opacity duration-500 group-hover/tile:opacity-100" />
                                     <div
                                         style={{ color: service.color }}
-                                        className="relative z-10 flex h-10 w-10 items-center justify-center rounded-[12px] bg-black/5 transition-transform duration-300 group-hover/tile:scale-110"
+                                        className="relative z-10 flex h-9 w-9 items-center justify-center rounded-[12px] bg-white/60 transition-transform duration-300 group-hover/tile:scale-110"
                                     >
                                         {service.icon}
                                     </div>
-                                    <span className="relative z-10 text-center font-sans text-[12px] font-black leading-tight tracking-tight text-[#1F1F1F]">
+                                    <span className="relative z-10 text-center font-sans text-[13px] font-medium leading-tight tracking-tight text-[#2A2A2A]">
                                         {service.label}
                                     </span>
                                 </motion.button>
