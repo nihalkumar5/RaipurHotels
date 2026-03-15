@@ -262,9 +262,9 @@ export default function GuestDashboard() {
                                     {displayCheckoutDate} <span className="px-2 text-[#B9A388]">·</span> {displayCheckoutTime}
                                 </p>
                             </div>
-                            <div className="ml-auto flex items-center gap-1 rounded-[10px] bg-[#111111] px-2.5 py-1.5 text-white shadow-[0_0_10px_rgba(0,0,0,0.2)]">
-                                <Check className="h-3 w-3 text-[#CFA46A]" />
-                                <span className="text-[9px] font-black uppercase tracking-[0.16em]">Verified Guest</span>
+                            <div className="ml-auto flex items-center gap-1 rounded-[9px] bg-[#111111] px-2 py-1 text-white shadow-[0_0_10px_rgba(0,0,0,0.2)]">
+                                <Check className="h-2.5 w-2.5 text-[#CFA46A]" />
+                                <span className="text-[8px] font-black uppercase tracking-[0.14em]">Verified Guest</span>
                             </div>
                         </div>
                     </div>
