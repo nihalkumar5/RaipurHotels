@@ -133,6 +133,16 @@ export default function GuestDashboard() {
     const heroImage =
         branding?.heroImage ||
         "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&q=80";
+    const activeOffers = offers.filter((offer) => offer.is_active);
+
+    React.useEffect(() => {
+        if (!activeOffers.length) {
+            setCurrentOfferIndex(0);
+            return;
+        }
+
+        setCurrentOfferIndex((previous) => (previous >= activeOffers.length ? 0 : previous));
+    }, [activeOffers.length]);
 
     const handleQuickRequest = async (type: string, notes: string) => {
         if (!branding?.id || submittingType) return;
@@ -392,6 +402,139 @@ export default function GuestDashboard() {
                         ))}
                     </div>
                 )}
+            </motion.section>
+
+            {/* 3. Special Offers */}
+            <motion.section
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.58 }}
+                className="mb-8 px-4"
+            >
+                <div className="rounded-[24px] border border-[#EADBC7] bg-[#FBF6EF] p-4 shadow-[0_16px_34px_rgba(0,0,0,0.06)]">
+                    <div className="mb-4 flex items-center justify-between">
+                        <div>
+                            <p className="mb-1 text-[10px] font-black uppercase tracking-[0.22em] text-[#C6A25A]">
+                                Special Offers
+                            </p>
+                            <h3 className="text-[20px] font-serif font-bold text-[#1F1F1F]">
+                                Curated for your stay
+                            </h3>
+                        </div>
+
+                        {activeOffers.length > 1 && (
+                            <div className="flex items-center gap-2">
+                                <motion.button
+                                    whileTap={{ scale: 0.94 }}
+                                    onClick={() =>
+                                        setCurrentOfferIndex((previous) =>
+                                            previous === 0 ? activeOffers.length - 1 : previous - 1,
+                                        )
+                                    }
+                                    className="flex h-9 w-9 items-center justify-center rounded-full border border-[#E8DCCB] bg-white text-[#1F1F1F] shadow-sm"
+                                >
+                                    <ChevronLeft className="h-4 w-4" />
+                                </motion.button>
+                                <motion.button
+                                    whileTap={{ scale: 0.94 }}
+                                    onClick={() =>
+                                        setCurrentOfferIndex((previous) =>
+                                            previous === activeOffers.length - 1 ? 0 : previous + 1,
+                                        )
+                                    }
+                                    className="flex h-9 w-9 items-center justify-center rounded-full border border-[#E8DCCB] bg-white text-[#1F1F1F] shadow-sm"
+                                >
+                                    <ChevronRight className="h-4 w-4" />
+                                </motion.button>
+                            </div>
+                        )}
+                    </div>
+
+                    {loadingOffers ? (
+                        <div className="flex h-[210px] items-center justify-center rounded-[20px] border border-dashed border-[#E8DCCB] bg-white/60 text-[#8D7B68]">
+                            <div className="flex items-center gap-3 text-sm font-semibold">
+                                <div className="h-5 w-5 rounded-full border-2 border-[#CFA46A] border-t-transparent animate-spin" />
+                                Loading offers...
+                            </div>
+                        </div>
+                    ) : activeOffers.length ? (
+                        <AnimatePresence mode="wait">
+                            <motion.div
+                                key={activeOffers[currentOfferIndex]?.id}
+                                initial={{ opacity: 0, x: 12 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                exit={{ opacity: 0, x: -12 }}
+                                transition={{ duration: 0.25 }}
+                                className="overflow-hidden rounded-[22px] border border-white/70 bg-white shadow-[0_12px_28px_rgba(0,0,0,0.08)]"
+                            >
+                                <div className="relative h-[190px] w-full overflow-hidden">
+                                    {activeOffers[currentOfferIndex]?.image_url ? (
+                                        <img
+                                            src={activeOffers[currentOfferIndex].image_url}
+                                            alt={activeOffers[currentOfferIndex].title}
+                                            className="h-full w-full object-cover"
+                                        />
+                                    ) : (
+                                        <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-[#E8D9C3] to-[#D8B78A]">
+                                            <Star className="h-10 w-10 text-white/80" />
+                                        </div>
+                                    )}
+                                    <div className="absolute inset-0 bg-gradient-to-t from-[#1F1F1F]/80 via-[#1F1F1F]/20 to-transparent" />
+                                    <div className="absolute bottom-0 left-0 right-0 p-5 text-white">
+                                        <p className="mb-2 text-[9px] font-black uppercase tracking-[0.24em] text-white/70">
+                                            Exclusive
+                                        </p>
+                                        <h4 className="text-[24px] font-serif font-bold leading-tight">
+                                            {activeOffers[currentOfferIndex]?.title}
+                                        </h4>
+                                    </div>
+                                </div>
+
+                                <div className="flex items-end justify-between gap-4 p-5">
+                                    <div>
+                                        <p className="text-[13px] font-medium leading-6 text-[#5F5A54]">
+                                            {activeOffers[currentOfferIndex]?.description || "Ask our team for details on this experience."}
+                                        </p>
+                                        {activeOffers.length > 1 && (
+                                            <div className="mt-3 flex items-center gap-1.5">
+                                                {activeOffers.map((offer, index) => (
+                                                    <button
+                                                        key={offer.id}
+                                                        onClick={() => setCurrentOfferIndex(index)}
+                                                        className={`h-1.5 rounded-full transition-all ${
+                                                            index === currentOfferIndex
+                                                                ? "w-6 bg-[#CFA46A]"
+                                                                : "w-1.5 bg-[#D9CFC3]"
+                                                        }`}
+                                                        aria-label={`View offer ${index + 1}`}
+                                                    />
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    <motion.button
+                                        whileTap={{ scale: 0.96 }}
+                                        onClick={() => router.push(`/${hotelSlug}/guest/services`)}
+                                        className="flex h-11 items-center gap-2 rounded-full bg-[#CFA46A] px-4 text-[10px] font-black uppercase tracking-[0.18em] text-white shadow-[0_10px_20px_rgba(207,164,106,0.25)]"
+                                    >
+                                        Explore
+                                        <ArrowRight className="h-3.5 w-3.5" />
+                                    </motion.button>
+                                </div>
+                            </motion.div>
+                        </AnimatePresence>
+                    ) : (
+                        <div className="rounded-[20px] border border-dashed border-[#E8DCCB] bg-white/60 px-5 py-8 text-center">
+                            <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#C6A25A] mb-2">
+                                Offers coming soon
+                            </p>
+                            <p className="text-sm font-medium text-[#6C6358]">
+                                The hotel has not published any active promotions yet.
+                            </p>
+                        </div>
+                    )}
+                </div>
             </motion.section>
 
             {/* 3. Refined Quick Services Section v3 (Exact Blueprint) */}

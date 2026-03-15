@@ -2,379 +2,700 @@
 
 import React, { useMemo } from "react";
 import { useParams } from "next/navigation";
-import { useSupabaseRequests, useHotelBranding } from "@/utils/store";
 import {
-    Download,
-    TrendingUp,
+    AlertTriangle,
     BarChart3,
-    Clock,
-    IndianRupee,
-    Activity,
-    Utensils,
-    Shirt,
-    ConciergeBell,
-    PieChart,
+    BedDouble,
     Calendar,
-    ArrowUpRight,
-    Search
+    CheckCircle2,
+    ClipboardList,
+    ConciergeBell,
+    Download,
+    IndianRupee,
+    Loader2,
+    Shirt,
+    Sparkles,
+    Users,
+    Utensils,
+    Wrench,
+    Car,
+    type LucideIcon,
 } from "lucide-react";
-import { motion } from "framer-motion";
+
+import {
+    type HotelRequest,
+    type RequestStatus,
+    useActiveGuests,
+    useHotelBranding,
+    useRooms,
+    useSupabaseRequests,
+} from "@/utils/store";
+
+type DepartmentKey =
+    | "Dining"
+    | "Laundry"
+    | "Housekeeping"
+    | "Reception"
+    | "Maintenance"
+    | "Transport"
+    | "Other";
+
+type DepartmentStat = {
+    key: DepartmentKey;
+    label: string;
+    icon: LucideIcon;
+    count: number;
+    liveCount: number;
+    revenue: number;
+    outstanding: number;
+};
+
+type FocusItem = {
+    title: string;
+    detail: string;
+    tone: "amber" | "rose" | "blue" | "emerald";
+};
+
+const ACTIVE_STATUSES = new Set<RequestStatus>(["Pending", "Assigned", "In Progress"]);
+
+const DEPARTMENT_META: Record<
+    DepartmentKey,
+    {
+        label: string;
+        icon: LucideIcon;
+    }
+> = {
+    Dining: { label: "Dining", icon: Utensils },
+    Laundry: { label: "Laundry", icon: Shirt },
+    Housekeeping: { label: "Housekeeping", icon: Sparkles },
+    Reception: { label: "Reception", icon: ConciergeBell },
+    Maintenance: { label: "Maintenance", icon: Wrench },
+    Transport: { label: "Transport", icon: Car },
+    Other: { label: "Other", icon: BarChart3 },
+};
+
+const currencyFormatter = new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
+    maximumFractionDigits: 0,
+});
+
+const formatCurrency = (value: number) => currencyFormatter.format(value || 0);
+
+const formatPercent = (value: number) => `${Math.round(value)}%`;
+
+const pluralize = (count: number, singular: string, plural = `${singular}s`) =>
+    `${count} ${count === 1 ? singular : plural}`;
+
+const getRequestAmount = (request: HotelRequest) => {
+    const rawAmount = request.total ?? request.price ?? 0;
+    return Number.isFinite(rawAmount) ? Number(rawAmount) : 0;
+};
+
+const mapRequestDepartment = (requestType?: string): DepartmentKey => {
+    const normalized = (requestType || "").toLowerCase();
+
+    if (
+        normalized.includes("dining") ||
+        normalized.includes("room service") ||
+        normalized.includes("tea") ||
+        normalized.includes("coffee") ||
+        normalized.includes("water") ||
+        normalized.includes("mini bar") ||
+        normalized.includes("breakfast")
+    ) {
+        return "Dining";
+    }
+
+    if (normalized.includes("laundry")) {
+        return "Laundry";
+    }
+
+    if (
+        normalized.includes("clean") ||
+        normalized.includes("housekeeping") ||
+        normalized.includes("luggage")
+    ) {
+        return "Housekeeping";
+    }
+
+    if (
+        normalized.includes("reception") ||
+        normalized.includes("late checkout") ||
+        normalized.includes("wake call") ||
+        normalized.includes("concierge")
+    ) {
+        return "Reception";
+    }
+
+    if (
+        normalized.includes("maintenance") ||
+        normalized.includes("repair") ||
+        normalized.includes("tap") ||
+        normalized.includes("toilet") ||
+        normalized.includes("shower") ||
+        normalized.includes("fan") ||
+        normalized.includes("ac") ||
+        normalized.includes("tv")
+    ) {
+        return "Maintenance";
+    }
+
+    if (
+        normalized.includes("taxi") ||
+        normalized.includes("airport") ||
+        normalized.includes("transfer")
+    ) {
+        return "Transport";
+    }
+
+    return "Other";
+};
+
+const formatRequestTime = (request: HotelRequest) => {
+    if (typeof request.timestamp === "number" && Number.isFinite(request.timestamp)) {
+        return new Intl.DateTimeFormat("en-IN", {
+            hour: "numeric",
+            minute: "2-digit",
+        }).format(new Date(request.timestamp));
+    }
+
+    return request.time || "--";
+};
+
+const isTodayDate = (value?: string) => {
+    if (!value) {
+        return false;
+    }
+
+    const today = new Date();
+    const todayKey = today.toISOString().slice(0, 10);
+    if (value.slice(0, 10) === todayKey) {
+        return true;
+    }
+
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) {
+        return false;
+    }
+
+    return parsed.toISOString().slice(0, 10) === todayKey;
+};
+
+const focusToneStyles: Record<FocusItem["tone"], string> = {
+    amber: "border-amber-200 bg-amber-50 text-amber-950",
+    rose: "border-rose-200 bg-rose-50 text-rose-950",
+    blue: "border-blue-200 bg-blue-50 text-blue-950",
+    emerald: "border-emerald-200 bg-emerald-50 text-emerald-950",
+};
 
 export default function AnalyticsPage() {
     const params = useParams();
     const hotelSlug = params?.hotel_slug as string;
-    const { branding } = useHotelBranding(hotelSlug);
+    const { branding, loading: brandingLoading } = useHotelBranding(hotelSlug);
     const requests = useSupabaseRequests(branding?.id);
+    const { rooms, loading: roomsLoading } = useRooms(branding?.id);
+    const { guests, loading: guestsLoading } = useActiveGuests(branding?.id);
 
-    // Advanced Data Processing
     const analytics = useMemo(() => {
-        if (!requests.length) return null;
+        const thirtyDaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1000;
+        const hasThirtyDayData = requests.some((request) => request.timestamp >= thirtyDaysAgo);
+        const scopedRequests = hasThirtyDayData
+            ? requests.filter((request) => request.timestamp >= thirtyDaysAgo)
+            : requests;
 
-        const paidRequests = requests.filter(r => r.is_paid);
-        const totalRevenue = paidRequests.reduce((sum, r) => sum + (r.total || 0) * 1.12, 0);
-        const kitchenRevenue = requests
-            .filter(r => r.is_paid && r.type === "Dining Order")
-            .reduce((sum, r) => sum + (r.total || 0), 0);
+        const activeRequests = scopedRequests.filter((request) => ACTIVE_STATUSES.has(request.status));
+        const completedRequests = scopedRequests.filter((request) => request.status === "Completed");
+        const billableRequests = scopedRequests.filter((request) => getRequestAmount(request) > 0);
+        const paidRequests = billableRequests.filter((request) => request.is_paid);
+        const outstandingRequests = billableRequests.filter((request) => !request.is_paid);
 
-        const completedRequests = requests.filter(r => r.status === "Completed");
-        const pendingAmount = requests
-            .filter(r => !r.is_paid && (r.total || 0) > 0)
-            .reduce((sum, r) => sum + (r.total || 0), 0);
+        const collectedRevenue = paidRequests.reduce((sum, request) => sum + getRequestAmount(request), 0);
+        const outstandingRevenue = outstandingRequests.reduce((sum, request) => sum + getRequestAmount(request), 0);
 
-        // Service Distribution
-        const serviceStats: Record<string, { count: number; revenue: number; icon: any }> = {
-            "Dining Order": { count: 0, revenue: 0, icon: Utensils },
-            "Laundry": { count: 0, revenue: 0, icon: Shirt },
-            "Housekeeping": { count: 0, revenue: 0, icon: Activity },
-            "Reception": { count: 0, revenue: 0, icon: ConciergeBell },
-        };
+        const occupiedRooms = rooms.filter((room) => room.is_occupied);
+        const totalRooms = rooms.length;
+        const occupiedRoomCount = occupiedRooms.length;
+        const occupancyRate = totalRooms ? (occupiedRoomCount / totalRooms) * 100 : 0;
+        const guestHeadcountFromRooms = occupiedRooms.reduce(
+            (sum, room) => sum + (room.num_guests && room.num_guests > 0 ? room.num_guests : 1),
+            0,
+        );
+        const activeGuestCount = Math.max(guests.length, guestHeadcountFromRooms, occupiedRoomCount);
+        const checkoutTodayRooms = rooms.filter((room) => isTodayDate(room.checkout_date));
 
-        // Dish Analytics (Kitchen Deep Dive)
-        const dishCounts: Record<string, number> = {};
+        const departmentAccumulator = Object.keys(DEPARTMENT_META).reduce<Record<DepartmentKey, DepartmentStat>>(
+            (accumulator, key) => {
+                const typedKey = key as DepartmentKey;
+                accumulator[typedKey] = {
+                    key: typedKey,
+                    label: DEPARTMENT_META[typedKey].label,
+                    icon: DEPARTMENT_META[typedKey].icon,
+                    count: 0,
+                    liveCount: 0,
+                    revenue: 0,
+                    outstanding: 0,
+                };
+                return accumulator;
+            },
+            {} as Record<DepartmentKey, DepartmentStat>,
+        );
 
-        // Hourly Trends
-        const hourlyStats = Array(24).fill(0);
+        const roomStats = new Map<
+            string,
+            { room: string; requestCount: number; liveCount: number; collected: number; outstanding: number }
+        >();
 
-        requests.forEach(r => {
-            // Count by type
-            if (serviceStats[r.type]) {
-                serviceStats[r.type].count++;
-                if (r.is_paid) serviceStats[r.type].revenue += (r.total || 0);
-            } else {
-                serviceStats[r.type] = { count: 1, revenue: r.is_paid ? (r.total || 0) : 0, icon: ConciergeBell };
-            }
+        scopedRequests.forEach((request) => {
+            const department = mapRequestDepartment(request.type);
+            const amount = getRequestAmount(request);
+            const departmentStat = departmentAccumulator[department];
 
-            // Trend parsing
-            const hour = parseInt(r.time?.split(':')[0] || '0');
-            if (hour >= 0 && hour < 24) hourlyStats[hour]++;
+            departmentStat.count += 1;
+            departmentStat.liveCount += ACTIVE_STATUSES.has(request.status) ? 1 : 0;
+            departmentStat.revenue += request.is_paid ? amount : 0;
+            departmentStat.outstanding += request.is_paid ? 0 : amount;
 
-            // Kitchen specific data extraction
-            if (r.type === "Dining Order" && r.notes) {
-                const dishes = r.notes.split(",").map(d => d.trim());
-                dishes.forEach(d => {
-                    if (d) {
-                        const match = d.match(/^(\d+)[x\s]+(.+)$/i);
-                        if (match) {
-                            const qty = parseInt(match[1]);
-                            const name = match[2].trim();
-                            dishCounts[name] = (dishCounts[name] || 0) + qty;
-                        } else {
-                            dishCounts[d] = (dishCounts[d] || 0) + 1;
-                        }
-                    }
-                });
-            }
+            const roomKey = request.room || "Unknown";
+            const existingRoom = roomStats.get(roomKey) || {
+                room: roomKey,
+                requestCount: 0,
+                liveCount: 0,
+                collected: 0,
+                outstanding: 0,
+            };
+
+            existingRoom.requestCount += 1;
+            existingRoom.liveCount += ACTIVE_STATUSES.has(request.status) ? 1 : 0;
+            existingRoom.collected += request.is_paid ? amount : 0;
+            existingRoom.outstanding += request.is_paid ? 0 : amount;
+            roomStats.set(roomKey, existingRoom);
         });
 
-        const topDishes = Object.entries(dishCounts)
-            .sort((a, b) => b[1] - a[1])
-            .slice(0, 6);
-
-        const topRooms = Array.from(new Set(requests.map(r => r.room)))
-            .map(room => ({
-                room,
-                spend: requests.filter(r => r.room === room && r.is_paid).reduce((s, r) => s + (r.total || 0), 0),
-                count: requests.filter(r => r.room === room).length
-            }))
-            .sort((a, b) => b.spend - a.spend)
+        const departmentStats = Object.values(departmentAccumulator)
+            .filter((stat) => stat.count > 0)
+            .sort((left, right) => right.count - left.count)
             .slice(0, 5);
 
-        // Busy hours calculation
-        const peakHours = hourlyStats
-            .map((count, hour) => ({ hour, count }))
-            .sort((a, b) => b.count - a.count)
-            .slice(0, 3);
+        const followUpRooms = Array.from(roomStats.values())
+            .sort((left, right) => {
+                if (right.outstanding !== left.outstanding) {
+                    return right.outstanding - left.outstanding;
+                }
+
+                if (right.liveCount !== left.liveCount) {
+                    return right.liveCount - left.liveCount;
+                }
+
+                return right.requestCount - left.requestCount;
+            })
+            .slice(0, 5);
+
+        const focusItems: FocusItem[] = [];
+
+        if (outstandingRevenue > 0) {
+            focusItems.push({
+                tone: "rose",
+                title: `Collect ${formatCurrency(outstandingRevenue)}`,
+                detail: `${pluralize(followUpRooms.filter((room) => room.outstanding > 0).length, "room")} still have unpaid service bills.`,
+            });
+        }
+
+        if (activeRequests.length > 0) {
+            focusItems.push({
+                tone: "amber",
+                title: `Close ${pluralize(activeRequests.length, "open request")}`,
+                detail: "These guest requests are still waiting for the team to finish action.",
+            });
+        }
+
+        if (checkoutTodayRooms.length > 0) {
+            focusItems.push({
+                tone: "blue",
+                title: `Prepare ${pluralize(checkoutTodayRooms.length, "checkout")}`,
+                detail: "Front desk and housekeeping should coordinate these rooms today.",
+            });
+        }
+
+        if (focusItems.length === 0) {
+            focusItems.push({
+                tone: "emerald",
+                title: "Everything looks under control",
+                detail: "No open backlog or unpaid service amount is currently showing in this reporting window.",
+            });
+        }
 
         return {
-            totalRevenue,
-            kitchenRevenue,
-            pendingAmount,
-            totalRequests: requests.length,
-            completionRate: (completedRequests.length / requests.length) * 100,
-            activeOrders: requests.filter(r => r.status !== "Completed").length,
-            serviceStats: Object.entries(serviceStats).sort((a, b) => b[1].count - a[1].count),
-            topDishes,
-            topRooms,
-            peakHours,
-            hourlyStats
+            scopedRequests,
+            hasThirtyDayData,
+            collectedRevenue,
+            outstandingRevenue,
+            occupiedRoomCount,
+            totalRooms,
+            occupancyRate,
+            activeGuestCount,
+            activeRequestCount: activeRequests.length,
+            completedRequestCount: completedRequests.length,
+            completionRate: scopedRequests.length ? (completedRequests.length / scopedRequests.length) * 100 : 0,
+            checkoutTodayCount: checkoutTodayRooms.length,
+            departmentStats,
+            followUpRooms,
+            focusItems,
+            recentRequests: scopedRequests.slice(0, 6),
         };
-    }, [requests]);
+    }, [guests, requests, rooms]);
 
     const exportToCSV = () => {
-        if (requests.length === 0) return;
-        const headers = ["ID", "Room", "Type", "Items", "Status", "Price", "Paid Status", "Timestamp"];
-        const rows = requests.map(r => [
-            r.id, r.room, `"${r.type}"`, `"${(r.notes || '').replace(/"/g, '""')}"`,
-            r.status, r.total || 0, r.is_paid ? 'PAID' : 'PENDING', r.timestamp
+        if (!analytics.scopedRequests.length) {
+            return;
+        }
+
+        const headers = ["Request ID", "Room", "Type", "Department", "Status", "Notes", "Amount", "Paid", "Time"];
+        const rows = analytics.scopedRequests.map((request) => [
+            request.id,
+            request.room,
+            `"${request.type}"`,
+            mapRequestDepartment(request.type),
+            request.status,
+            `"${(request.notes || "").replace(/"/g, '""')}"`,
+            getRequestAmount(request),
+            request.is_paid ? "PAID" : "PENDING",
+            request.time,
         ]);
-        const csv = [headers.join(","), ...rows.map(row => row.join(","))].join("\n");
+
+        const csv = [headers.join(","), ...rows.map((row) => row.join(","))].join("\n");
         const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
         const url = URL.createObjectURL(blob);
         const link = document.createElement("a");
         link.href = url;
-        link.download = `Analytics_${hotelSlug}_${new Date().toLocaleDateString()}.csv`;
+        link.download = `${hotelSlug}_simple_owner_snapshot_${new Date().toISOString().slice(0, 10)}.csv`;
         link.click();
+        URL.revokeObjectURL(url);
     };
 
-    if (!analytics) {
+    if (brandingLoading && !branding) {
         return (
-            <div className="p-12 text-center">
-                <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                    <BarChart3 className="w-10 h-10 text-slate-300" />
-                </div>
-                <h2 className="text-2xl font-black text-slate-900 font-sans">Gathering Insights...</h2>
-                <p className="text-slate-500 mt-2">When guests start ordering, your data will appear here.</p>
+            <div className="p-12 flex items-center justify-center text-slate-500">
+                <Loader2 className="w-5 h-5 animate-spin mr-3" />
+                Loading owner snapshot...
             </div>
         );
     }
 
+    const metricCards = [
+        {
+            label: "Money Collected",
+            value: formatCurrency(analytics.collectedRevenue),
+            note: "Paid service amount",
+            icon: IndianRupee,
+        },
+        {
+            label: "Money Pending",
+            value: formatCurrency(analytics.outstandingRevenue),
+            note: "Still to collect",
+            icon: AlertTriangle,
+        },
+        {
+            label: "Rooms Occupied",
+            value: analytics.totalRooms
+                ? `${analytics.occupiedRoomCount}/${analytics.totalRooms}`
+                : analytics.occupiedRoomCount.toString(),
+            note: analytics.totalRooms ? `${formatPercent(analytics.occupancyRate)} occupied` : "No rooms added yet",
+            icon: BedDouble,
+        },
+        {
+            label: "Open Requests",
+            value: analytics.activeRequestCount.toString(),
+            note: `${analytics.completedRequestCount} completed in this period`,
+            icon: ClipboardList,
+        },
+    ];
+
     return (
-        <div className="p-8 max-w-[1600px] mx-auto pb-32">
-            {/* Header Section */}
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-12 gap-6">
+        <div className="p-8 max-w-[1280px] mx-auto pb-32 space-y-8">
+            <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6">
                 <div>
-                    <div className="flex items-center gap-3 mb-2">
-                        <div className="px-3 py-1 bg-blue-50 text-blue-600 text-[10px] font-black uppercase tracking-widest rounded-full border border-blue-100" style={{ color: branding?.primaryColor, backgroundColor: branding?.primaryColor + '10' }}>
-                            Live Command Center
-                        </div>
-                        <div className="flex items-center gap-1.5 text-[10px] font-bold text-green-500">
-                            <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></div>
-                            Syncing Data
-                        </div>
+                    <div
+                        className="inline-flex px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-[0.22em] border mb-4"
+                        style={{
+                            color: branding?.primaryColor || "#0f172a",
+                            backgroundColor: `${branding?.primaryColor || "#0f172a"}12`,
+                            borderColor: `${branding?.primaryColor || "#0f172a"}20`,
+                        }}
+                    >
+                        Owner Snapshot
                     </div>
-                    <h1 className="text-5xl font-black text-slate-900 tracking-tight leading-none mb-3 font-sans">
-                        Hotel <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600 font-sans" style={{ backgroundImage: `linear-gradient(to right, ${branding?.primaryColor || '#2563eb'}, ${branding?.accentColor || '#4f46e5'})` }}>Intelligence</span>
+                    <h1 className="text-4xl font-black tracking-tight text-slate-950 mb-3">
+                        Easy daily view for {branding?.name || "your hotel"}
                     </h1>
-                    <p className="text-slate-500 font-medium">Detailed breakdown of operations, kitchen performance, and revenue.</p>
+                    <p className="text-base text-slate-500 max-w-3xl">
+                        Simple numbers only: money, occupied rooms, open guest issues, and where you may need to follow up.
+                    </p>
                 </div>
 
-                <div className="flex gap-4">
-                    <button className="px-6 py-4 bg-white border border-slate-200 rounded-2xl text-sm font-bold text-slate-600 hover:bg-slate-50 transition-all flex items-center shadow-sm">
-                        <Calendar className="w-4 h-4 mr-3" />
-                        Last 30 Days
-                    </button>
+                <div className="flex flex-wrap gap-4">
+                    <div className="px-5 py-4 bg-white border border-slate-200 rounded-[1.5rem] shadow-sm">
+                        <div className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400 mb-1">
+                            Showing
+                        </div>
+                        <div className="text-sm font-black text-slate-900 flex items-center gap-2">
+                            <Calendar className="w-4 h-4 text-slate-400" />
+                            {analytics.hasThirtyDayData ? "Last 30 days" : "All available data"}
+                        </div>
+                    </div>
                     <button
                         onClick={exportToCSV}
-                        className="bg-slate-900 text-white px-8 py-4 rounded-2xl font-black text-sm flex items-center hover:shadow-2xl hover:shadow-slate-200 transition-all active:scale-95 group"
-                        style={{ backgroundColor: branding?.primaryColor }}
+                        className="px-5 py-4 rounded-[1.5rem] text-white font-black text-sm shadow-lg transition-transform active:scale-95 flex items-center gap-3"
+                        style={{
+                            backgroundImage: `linear-gradient(135deg, ${branding?.primaryColor || "#0f172a"}, ${branding?.accentColor || "#3b82f6"})`,
+                        }}
                     >
-                        <Download className="w-5 h-5 mr-3 group-hover:translate-y-0.5 transition-transform" />
-                        Download Intelligence Report
+                        <Download className="w-5 h-5" />
+                        Download CSV
                     </button>
                 </div>
             </div>
 
-            {/* Main Stats Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-                {[
-                    { label: "Gross Revenue", value: `₹${analytics.totalRevenue.toLocaleString()}`, sub: `+12.5% from last month`, icon: <IndianRupee />, color: "blue" },
-                    { label: "Kitchen Volume", value: analytics.topDishes.reduce((a, b) => a + b[1], 0), sub: `${analytics.topDishes.length} Trending Dishes`, icon: <Utensils />, color: "orange" },
-                    { label: "Operation Speed", value: "14m", sub: "Avg Task Completion", icon: <Clock />, color: "purple" },
-                    { label: "Guest Happiness", value: "4.8/5", sub: "Based on 42 reviews", icon: <Activity />, color: "green" }
-                ].map((stat, i) => (
-                    <motion.div
-                        key={i}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: i * 0.1 }}
-                        className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm relative overflow-hidden group"
-                    >
-                        <div className={`w-14 h-14 rounded-2xl flex items-center justify-center mb-6 text-xl transition-transform group-hover:scale-110 duration-500 ${stat.color === 'blue' ? 'bg-blue-50 text-blue-600' :
-                            stat.color === 'orange' ? 'bg-orange-50 text-orange-600' :
-                                stat.color === 'purple' ? 'bg-purple-50 text-purple-600' : 'bg-green-50 text-green-600'
-                            }`} style={stat.color === 'blue' ? { backgroundColor: branding?.primaryColor + '10', color: branding?.primaryColor } : {}}>
-                            {stat.icon}
-                        </div>
-                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">{stat.label}</p>
-                        <h3 className="text-3xl font-black text-slate-900 tracking-tighter mb-2 font-sans">{stat.value}</h3>
-                        <p className="text-xs font-bold text-slate-400 flex items-center">
-                            <ArrowUpRight className="w-3 h-3 mr-1 text-green-500" />
-                            {stat.sub}
-                        </p>
-                    </motion.div>
-                ))}
-            </div>
+            {(roomsLoading || guestsLoading) && (
+                <div className="px-5 py-4 bg-white border border-slate-200 rounded-[1.5rem] text-sm text-slate-500 flex items-center gap-3">
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Refreshing live hotel data...
+                </div>
+            )}
 
-            <div className="grid grid-cols-1 xl:grid-cols-3 gap-8 mb-12">
-                {/* Kitchen Deep Dive */}
-                <motion.div className="xl:col-span-2 bg-white rounded-[3rem] p-10 border border-slate-100 shadow-sm overflow-hidden relative">
-                    <div className="flex justify-between items-center mb-10">
-                        <div>
-                            <h2 className="text-2xl font-black text-slate-900 mb-1 font-sans">Kitchen Analytics</h2>
-                            <p className="text-sm font-medium text-slate-400">Deep-dive into culinary performance</p>
-                        </div>
-                        <div className="p-4 bg-slate-50 rounded-2xl">
-                            <TrendingUp className="w-6 h-6 text-slate-400" />
-                        </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-                        <div className="space-y-8">
-                            <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 font-sans">
-                                <PieChart className="w-4 h-4" /> Best Selling Dishes
-                            </h3>
-                            <div className="space-y-6">
-                                {analytics.topDishes.map(([name, count], idx) => (
-                                    <div key={idx} className="group cursor-default">
-                                        <div className="flex justify-between items-center mb-2">
-                                            <span className="text-sm font-bold text-slate-700">{name}</span>
-                                            <span className="text-xs font-black px-2 py-0.5 bg-slate-100 rounded-md">{count} Orders</span>
-                                        </div>
-                                        <div className="w-full h-2 bg-slate-50 rounded-full overflow-hidden">
-                                            <motion.div
-                                                initial={{ width: 0 }}
-                                                animate={{ width: `${(count / (analytics.topDishes[0][1] || 1)) * 100}%` }}
-                                                className="h-full bg-slate-900 rounded-full"
-                                                style={{ backgroundColor: branding?.primaryColor }}
-                                            />
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-
-                        <div className="space-y-8 bg-slate-50/50 p-8 rounded-[2.5rem] border border-slate-100">
-                            <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 text-center justify-center font-sans">
-                                Revenue Efficiency
-                            </h3>
-                            <div className="flex flex-col items-center justify-center py-6 text-center">
-                                <div className="text-5xl font-black text-slate-900 mb-2 font-sans">₹{analytics.kitchenRevenue.toLocaleString()}</div>
-                                <p className="text-xs font-bold text-slate-400 max-w-[200px]">Total generated from Food & Beverage services</p>
-
-                                <div className="mt-10 grid grid-cols-2 gap-4 w-full">
-                                    <div className="bg-white p-4 rounded-2xl border border-slate-100">
-                                        <div className="text-xs font-black text-slate-400 mb-1">MARGIN</div>
-                                        <div className="text-lg font-black text-blue-600 font-sans">64%</div>
-                                    </div>
-                                    <div className="bg-white p-4 rounded-2xl border border-slate-100">
-                                        <div className="text-xs font-black text-slate-400 mb-1">WASTE</div>
-                                        <div className="text-lg font-black text-red-500 font-sans">2.1%</div>
-                                    </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5">
+                {metricCards.map((card) => {
+                    const Icon = card.icon;
+                    return (
+                        <div
+                            key={card.label}
+                            className="bg-white rounded-[1.75rem] border border-slate-200 p-6 shadow-[0_12px_30px_rgba(15,23,42,0.05)]"
+                        >
+                            <div className="flex items-center justify-between mb-5">
+                                <div className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">
+                                    {card.label}
                                 </div>
-                            </div>
-                        </div>
-                    </div>
-                </motion.div>
-
-                {/* Operations Load Heatmap */}
-                <motion.div className="bg-slate-900 rounded-[3rem] p-10 text-white relative overflow-hidden"
-                    style={{ backgroundColor: branding?.primaryColor || '#0f172a' }}>
-                    <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -mr-32 -mt-32 blur-3xl"></div>
-
-                    <h2 className="text-2xl font-black mb-8 relative z-10 font-sans">Operations Heatmap</h2>
-
-                    <div className="space-y-4 relative z-10">
-                        <p className="text-xs font-bold text-white/60 mb-6">Density of requests over 24 hours</p>
-
-                        <div className="flex items-end justify-between h-48 gap-1 mb-8">
-                            {analytics.hourlyStats.map((count, i) => (
-                                <motion.div
-                                    key={i}
-                                    initial={{ height: 0 }}
-                                    animate={{ height: `${(count / (Math.max(...analytics.hourlyStats) || 1)) * 100}%` }}
-                                    className="w-full bg-white/20 rounded-t-sm hover:bg-white/50 transition-colors relative group"
+                                <div
+                                    className="w-10 h-10 rounded-2xl flex items-center justify-center"
+                                    style={{
+                                        backgroundColor: `${branding?.primaryColor || "#0f172a"}10`,
+                                        color: branding?.primaryColor || "#0f172a",
+                                    }}
                                 >
-                                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 bg-white text-slate-900 text-[8px] font-black px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                                        {i}:00 ({count})
-                                    </div>
-                                </motion.div>
-                            ))}
-                        </div>
-
-                        <div className="space-y-3">
-                            {analytics.peakHours.map((peak, idx) => (
-                                <div key={idx} className="flex justify-between items-center p-4 bg-white/5 rounded-2xl border border-white/10">
-                                    <div className="flex items-center gap-3">
-                                        <div className="text-lg font-black text-white/40">0{idx + 1}</div>
-                                        <div>
-                                            <div className="text-sm font-black">{peak.hour}:00 - {peak.hour + 1}:00</div>
-                                            <div className="text-[10px] font-bold text-white/40">Peak Traffic Window</div>
-                                        </div>
-                                    </div>
-                                    <div className="px-3 py-1 bg-white/10 rounded-full text-xs font-black">{peak.count} req/hr</div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                </motion.div>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                {/* Service Quality */}
-                <div className="bg-white rounded-[3rem] p-10 border border-slate-100 shadow-sm">
-                    <h2 className="text-2xl font-black text-slate-900 mb-8 flex items-center gap-3 font-sans">
-                        <Activity className="w-6 h-6 text-slate-400" />
-                        Service Distribution
-                    </h2>
-                    <div className="space-y-5">
-                        {analytics.serviceStats.map(([type, stat]) => (
-                            <div key={type} className="flex items-center justify-between p-5 bg-slate-50 rounded-[2rem] border border-slate-100 group hover:bg-white hover:shadow-xl hover:shadow-slate-100 transition-all cursor-default">
-                                <div className="flex items-center gap-5">
-                                    <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-slate-400 border border-slate-100 transition-transform group-hover:scale-110">
-                                        <stat.icon className="w-6 h-6" />
-                                    </div>
-                                    <div>
-                                        <div className="font-black text-slate-900">{type}</div>
-                                        <div className="text-xs font-bold text-slate-400">{stat.count} Total Tasks</div>
-                                    </div>
-                                </div>
-                                <div className="text-right">
-                                    <div className="font-black text-slate-900 font-sans">₹{stat.revenue.toLocaleString()}</div>
-                                    <div className="text-[10px] font-black uppercase text-green-500">Collected</div>
+                                    <Icon className="w-5 h-5" />
                                 </div>
                             </div>
-                        ))}
+                            <div className="text-3xl font-black text-slate-950 tracking-tight mb-2">{card.value}</div>
+                            <div className="text-sm text-slate-500">{card.note}</div>
+                        </div>
+                    );
+                })}
+            </div>
+
+            <div className="bg-white rounded-[2rem] border border-slate-200 p-6 shadow-[0_12px_30px_rgba(15,23,42,0.05)]">
+                <div className="mb-5">
+                    <div className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400 mb-2">
+                        Focus Today
                     </div>
+                    <h2 className="text-2xl font-black text-slate-950 mb-1">What needs your attention</h2>
+                    <p className="text-sm text-slate-500">
+                        These are the clearest action items based on current room and service data.
+                    </p>
                 </div>
 
-                {/* High Spending Rooms */}
-                <div className="bg-white rounded-[3rem] p-10 border border-slate-100 shadow-sm">
-                    <h1 className="text-2xl font-black text-slate-900 mb-8 flex items-center gap-3 font-sans">
-                        <Search className="w-6 h-6 text-slate-400" />
-                        Top Performing Rooms
-                    </h1>
-                    <div className="overflow-hidden">
-                        <table className="w-full">
-                            <thead>
-                                <tr className="text-left">
-                                    <th className="pb-4 text-[10px] font-black text-slate-400 uppercase tracking-widest px-4">Room</th>
-                                    <th className="pb-4 text-[10px] font-black text-slate-400 uppercase tracking-widest px-4">Req Count</th>
-                                    <th className="pb-4 text-[10px] font-black text-slate-400 uppercase tracking-widest px-4 text-right">Total Spend</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-slate-100">
-                                {analytics.topRooms.map((room, idx) => (
-                                    <tr key={idx} className="group hover:bg-slate-50 transition-colors">
-                                        <td className="py-5 px-4">
-                                            <div className="font-black text-slate-900 text-lg font-sans">Room {room.room}</div>
-                                        </td>
-                                        <td className="py-5 px-4 font-bold text-slate-500">{room.count} Services</td>
-                                        <td className="py-5 px-4 text-right font-black text-slate-900 text-lg font-sans">₹{room.spend.toLocaleString()}</td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                    {analytics.focusItems.map((item) => (
+                        <div
+                            key={item.title}
+                            className={`rounded-[1.5rem] border p-5 ${focusToneStyles[item.tone]}`}
+                        >
+                            <div className="text-lg font-black mb-2">{item.title}</div>
+                            <div className="text-sm leading-6 opacity-80">{item.detail}</div>
+                        </div>
+                    ))}
+                </div>
+            </div>
+
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                <div className="bg-white rounded-[2rem] border border-slate-200 p-6 shadow-[0_12px_30px_rgba(15,23,42,0.05)]">
+                    <div className="mb-5">
+                        <div className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400 mb-2">
+                            Team Load
+                        </div>
+                        <h2 className="text-2xl font-black text-slate-950 mb-1">Which team is busiest</h2>
+                        <p className="text-sm text-slate-500">
+                            Simple request counts so you can see where most guest demand is landing.
+                        </p>
                     </div>
+
+                    {analytics.departmentStats.length ? (
+                        <div className="space-y-3">
+                            {analytics.departmentStats.map((stat) => {
+                                const Icon = stat.icon;
+                                return (
+                                    <div
+                                        key={stat.key}
+                                        className="rounded-[1.25rem] border border-slate-200 bg-slate-50 px-4 py-4 flex items-center justify-between gap-4"
+                                    >
+                                        <div className="flex items-center gap-4">
+                                            <div className="w-10 h-10 rounded-2xl bg-white border border-slate-200 flex items-center justify-center text-slate-600">
+                                                <Icon className="w-5 h-5" />
+                                            </div>
+                                            <div>
+                                                <div className="font-black text-slate-950">{stat.label}</div>
+                                                <div className="text-sm text-slate-500">
+                                                    {pluralize(stat.count, "request")} total
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div className="text-right">
+                                            <div className="text-sm font-black text-slate-950">{stat.liveCount} open</div>
+                                            <div className="text-xs text-slate-500">{formatCurrency(stat.revenue)} collected</div>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    ) : (
+                        <div className="rounded-[1.5rem] border border-dashed border-slate-300 p-6 text-sm text-slate-500">
+                            No guest requests yet, so there is no team load to show.
+                        </div>
+                    )}
+                </div>
+
+                <div className="bg-white rounded-[2rem] border border-slate-200 p-6 shadow-[0_12px_30px_rgba(15,23,42,0.05)]">
+                    <div className="mb-5">
+                        <div className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400 mb-2">
+                            Room Follow-up
+                        </div>
+                        <h2 className="text-2xl font-black text-slate-950 mb-1">Which rooms need attention</h2>
+                        <p className="text-sm text-slate-500">
+                            Rooms with unpaid services or live requests should usually be checked first.
+                        </p>
+                    </div>
+
+                    {analytics.followUpRooms.length ? (
+                        <div className="space-y-3">
+                            {analytics.followUpRooms.map((room) => (
+                                <div
+                                    key={room.room}
+                                    className="rounded-[1.25rem] border border-slate-200 bg-slate-50 px-4 py-4 flex items-center justify-between gap-4"
+                                >
+                                    <div>
+                                        <div className="font-black text-slate-950">Room {room.room}</div>
+                                        <div className="text-sm text-slate-500">
+                                            {room.liveCount} open · {room.requestCount} total requests
+                                        </div>
+                                    </div>
+                                    <div className="text-right">
+                                        <div className="text-sm font-black text-rose-600">
+                                            {room.outstanding ? formatCurrency(room.outstanding) : "No pending bill"}
+                                        </div>
+                                        <div className="text-xs text-slate-500">
+                                            Collected {formatCurrency(room.collected)}
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="rounded-[1.5rem] border border-dashed border-slate-300 p-6 text-sm text-slate-500">
+                            No rooms currently need follow-up.
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            <div className="bg-white rounded-[2rem] border border-slate-200 p-6 shadow-[0_12px_30px_rgba(15,23,42,0.05)]">
+                <div className="mb-5">
+                    <div className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400 mb-2">
+                        Quick Summary
+                    </div>
+                    <h2 className="text-2xl font-black text-slate-950 mb-1">Simple hotel health</h2>
+                    <p className="text-sm text-slate-500">
+                        The most useful daily context for an owner without needing to read charts.
+                    </p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                    {[
+                        {
+                            label: "Guests in house",
+                            value: analytics.activeGuestCount.toString(),
+                            note: "Based on active guests and occupied rooms",
+                            icon: Users,
+                        },
+                        {
+                            label: "Checkouts today",
+                            value: analytics.checkoutTodayCount.toString(),
+                            note: "Useful for front desk and housekeeping planning",
+                            icon: Calendar,
+                        },
+                        {
+                            label: "Completion rate",
+                            value: formatPercent(analytics.completionRate),
+                            note: "Share of requests already closed",
+                            icon: CheckCircle2,
+                        },
+                    ].map((item) => {
+                        const Icon = item.icon;
+                        return (
+                            <div key={item.label} className="rounded-[1.25rem] border border-slate-200 bg-slate-50 px-4 py-4">
+                                <div className="flex items-center gap-3 mb-3">
+                                    <div className="w-9 h-9 rounded-2xl bg-white border border-slate-200 flex items-center justify-center text-slate-600">
+                                        <Icon className="w-4 h-4" />
+                                    </div>
+                                    <div className="text-sm font-black text-slate-950">{item.label}</div>
+                                </div>
+                                <div className="text-2xl font-black text-slate-950 mb-1">{item.value}</div>
+                                <div className="text-xs text-slate-500">{item.note}</div>
+                            </div>
+                        );
+                    })}
+                </div>
+
+                <div>
+                    <div className="text-sm font-black text-slate-950 mb-3">Latest guest activity</div>
+                    {analytics.recentRequests.length ? (
+                        <div className="space-y-3">
+                            {analytics.recentRequests.map((request) => (
+                                <div
+                                    key={request.id}
+                                    className="rounded-[1.25rem] border border-slate-200 bg-slate-50 px-4 py-4 flex items-center justify-between gap-4"
+                                >
+                                    <div>
+                                        <div className="font-black text-slate-950">
+                                            Room {request.room} · {request.type}
+                                        </div>
+                                        <div className="text-sm text-slate-500">
+                                            {formatRequestTime(request)}
+                                            {request.notes ? ` · ${request.notes}` : ""}
+                                        </div>
+                                    </div>
+                                    <div className="text-right min-w-fit">
+                                        <div
+                                            className={`text-xs font-black uppercase tracking-[0.18em] ${
+                                                ACTIVE_STATUSES.has(request.status)
+                                                    ? "text-amber-600"
+                                                    : request.status === "Completed"
+                                                        ? "text-emerald-600"
+                                                        : "text-slate-500"
+                                            }`}
+                                        >
+                                            {request.status}
+                                        </div>
+                                        <div className="text-xs text-slate-500">
+                                            {getRequestAmount(request) ? formatCurrency(getRequestAmount(request)) : "No charge"}
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="rounded-[1.5rem] border border-dashed border-slate-300 p-6 text-sm text-slate-500">
+                            No guest activity yet.
+                        </div>
+                    )}
                 </div>
             </div>
         </div>

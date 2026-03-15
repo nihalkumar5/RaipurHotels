@@ -19,22 +19,18 @@ export default function BrandingPage() {
     const { offers, loading: loadingOffers } = useSpecialOffers(branding?.id);
     const [newOffer, setNewOffer] = useState<Partial<SpecialOffer>>({ title: "", description: "", image_url: "", is_active: true });
     const [isAddingOffer, setIsAddingOffer] = useState(false);
-    const [isInitialLoadDone, setIsInitialLoadDone] = useState(false);
 
     useEffect(() => {
-        if (branding && !isInitialLoadDone) {
+        if (branding) {
             setConfig(branding);
-            setIsInitialLoadDone(true);
         }
-    }, [branding, isInitialLoadDone]);
+    }, [branding]);
 
     const handleSave = async () => {
         if (!branding?.id) return;
 
-        console.log("Attempting to save branding with config:", config);
-
         setIsSaving(true);
-        const { error } = await saveHotelBranding(branding.id, config);
+        const { data, error } = await saveHotelBranding(branding.id, config);
         setIsSaving(false);
 
         if (error) {
@@ -43,6 +39,10 @@ export default function BrandingPage() {
             
             Tip: If this is a 'column not found' error, please run the SQL force-fix provided in the chat.`);
             return;
+        }
+
+        if (data) {
+            setConfig(data);
         }
 
         setShowSuccess(true);

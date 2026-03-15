@@ -75,6 +75,19 @@ const mapHotelRowToBranding = (row: HotelRow): HotelBranding => ({
     welcomeMessage: row.welcome_message ?? undefined,
 });
 
+const normalizeOptionalText = (value?: string | null) => {
+    if (value === undefined) {
+        return undefined;
+    }
+
+    if (value === null) {
+        return null;
+    }
+
+    const trimmed = value.trim();
+    return trimmed.length ? trimmed : null;
+};
+
 const buildDemoBranding = (slug: string): HotelBranding => {
     const preset = DEMO_BRANDING[slug];
 
@@ -184,36 +197,44 @@ export async function saveHotelBranding(id: string, updates: Partial<HotelBrandi
         };
     }
 
+    const payload = {
+        name: normalizeOptionalText(updates.name),
+        city: normalizeOptionalText(updates.city),
+        logo: updates.logo === undefined ? undefined : convertGDriveLink(updates.logo ?? ""),
+        logo_image: updates.logoImage === undefined ? undefined : convertGDriveLink(updates.logoImage ?? ""),
+        hero_image: updates.heroImage === undefined ? undefined : convertGDriveLink(updates.heroImage ?? ""),
+        primary_color: updates.primaryColor,
+        accent_color: updates.accentColor,
+        service_icon_color: normalizeOptionalText(updates.serviceIconColor),
+        wifi_name: normalizeOptionalText(updates.wifiName),
+        wifi_password: normalizeOptionalText(updates.wifiPassword),
+        reception_phone: normalizeOptionalText(updates.receptionPhone),
+        breakfast_start: normalizeOptionalText(updates.breakfastStart),
+        breakfast_end: normalizeOptionalText(updates.breakfastEnd),
+        lunch_start: normalizeOptionalText(updates.lunchStart),
+        lunch_end: normalizeOptionalText(updates.lunchEnd),
+        dinner_start: normalizeOptionalText(updates.dinnerStart),
+        dinner_end: normalizeOptionalText(updates.dinnerEnd),
+        late_checkout_phone: normalizeOptionalText(updates.lateCheckoutPhone),
+        late_checkout_charge_1: normalizeOptionalText(updates.lateCheckoutCharge1),
+        late_checkout_charge_2: normalizeOptionalText(updates.lateCheckoutCharge2),
+        late_checkout_charge_3: normalizeOptionalText(updates.lateCheckoutCharge3),
+        airport_transfer_charge_1: normalizeOptionalText(updates.airportTransferCharge1),
+        airport_transfer_charge_2: normalizeOptionalText(updates.airportTransferCharge2),
+        airport_transfer_charge_3: normalizeOptionalText(updates.airportTransferCharge3),
+        checkout_message: normalizeOptionalText(updates.checkoutMessage),
+        google_review_link: normalizeOptionalText(updates.googleReviewLink),
+        welcome_message: normalizeOptionalText(updates.welcomeMessage),
+    };
+
     return supabase
         .from("hotels")
-        .update({
-            name: updates.name,
-            city: updates.city,
-            logo: convertGDriveLink(updates.logo ?? ""),
-            logo_image: convertGDriveLink(updates.logoImage ?? ""),
-            hero_image: convertGDriveLink(updates.heroImage ?? ""),
-            primary_color: updates.primaryColor,
-            accent_color: updates.accentColor,
-            service_icon_color: updates.serviceIconColor,
-            wifi_name: updates.wifiName,
-            wifi_password: updates.wifiPassword,
-            reception_phone: updates.receptionPhone,
-            breakfast_start: updates.breakfastStart,
-            breakfast_end: updates.breakfastEnd,
-            lunch_start: updates.lunchStart,
-            lunch_end: updates.lunchEnd,
-            dinner_start: updates.dinnerStart,
-            dinner_end: updates.dinnerEnd,
-            late_checkout_phone: updates.lateCheckoutPhone,
-            late_checkout_charge_1: updates.lateCheckoutCharge1,
-            late_checkout_charge_2: updates.lateCheckoutCharge2,
-            late_checkout_charge_3: updates.lateCheckoutCharge3,
-            airport_transfer_charge_1: updates.airportTransferCharge1,
-            airport_transfer_charge_2: updates.airportTransferCharge2,
-            airport_transfer_charge_3: updates.airportTransferCharge3,
-            checkout_message: updates.checkoutMessage,
-            google_review_link: updates.googleReviewLink,
-            welcome_message: updates.welcomeMessage,
-        })
-        .eq("id", id);
+        .update(payload)
+        .eq("id", id)
+        .select("*")
+        .single()
+        .then((result: { data: HotelRow | null; error: { message?: string } | null }) => ({
+            data: result.data ? mapHotelRowToBranding(result.data) : null,
+            error: result.error,
+        }));
 }
