@@ -149,7 +149,7 @@ export default function GuestDashboard() {
             <motion.section 
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                className="relative h-[480px] w-full"
+                className="relative h-[560px] w-full overflow-hidden sm:h-[520px]"
             >
                 {/* Full-bleed Hotel Image Background */}
                 <div className="absolute inset-0 z-0">
@@ -162,12 +162,12 @@ export default function GuestDashboard() {
                 </div>
 
                 {/* Glass Guest Portal Overlay */}
-                <div className="absolute inset-x-0 bottom-0 z-10 sm:inset-x-6 sm:bottom-12">
+                <div className="absolute inset-x-4 top-[112px] z-10 sm:inset-x-6 sm:top-[96px]">
                     <motion.div 
                         initial={{ y: 20, opacity: 0 }}
                         animate={{ y: 0, opacity: 1 }}
                         transition={{ delay: 0.3, duration: 0.8 }}
-                        className="relative border border-white/40 bg-white/60 p-8 backdrop-blur-xl shadow-[0_20px_40px_rgba(0,0,0,0.12)] rounded-none sm:rounded-[26px]"
+                        className="relative rounded-[30px] border border-white/40 bg-white/60 p-7 shadow-[0_20px_40px_rgba(0,0,0,0.12)] backdrop-blur-xl sm:rounded-[26px] sm:p-8"
                     >
                         <div className="flex items-start justify-between mb-8">
                             <div>
@@ -205,7 +205,7 @@ export default function GuestDashboard() {
                 </div>
 
                 {/* Glass Guest Portal Label Component */}
-                <div className="absolute left-1/2 top-4 z-20 -translate-x-1/2 sm:top-12">
+                <div className="absolute left-1/2 top-5 z-20 -translate-x-1/2 sm:top-12">
                     <div className="rounded-full border border-white/40 bg-white/40 px-6 py-2 text-[10px] font-black uppercase tracking-[0.2em] text-[#1F1F1F] shadow-sm backdrop-blur-md">
                         Glass Guest Portal
                     </div>
@@ -217,9 +217,9 @@ export default function GuestDashboard() {
                 initial={{ opacity: 0, y: 15 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.5 }}
-                className="relative z-10 mb-10 -mt-9 px-0 sm:px-6"
+                className="relative z-10 mb-10 mt-4 px-4 sm:mt-0 sm:px-6"
             >
-                <div className="flex h-[85px] items-center justify-between border border-white/20 bg-[#F3EAE1] px-6 py-4 shadow-[0_8px_20px_rgba(0,0,0,0.06)] rounded-none sm:rounded-[18px]">
+                <div className="flex h-[85px] items-center justify-between rounded-[24px] border border-white/20 bg-[#F3EAE1]/95 px-6 py-4 shadow-[0_8px_20px_rgba(0,0,0,0.06)] sm:rounded-[18px]">
                     {/* Room Section */}
                     <div className="flex-1 flex flex-col items-center">
                         <span className="text-[9px] font-black text-slate-400 uppercase tracking-[0.25em] mb-2 opacity-70">Room</span>
