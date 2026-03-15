@@ -143,10 +143,16 @@ export async function saveSpecialOffer(hotelId: string, offer: Partial<SpecialOf
         .insert([{ ...offer, image_url: imageUrl, hotel_id: hotelId }]);
 }
 
-export async function deleteSpecialOffer(id: string) {
+export async function deleteSpecialOffer(id: string, hotelId?: string) {
     if (isDemoMode()) {
         return { data: null, error: removeDemoOfferById(id) ? null : { message: "Offer not found" } };
     }
 
-    return supabase.from("special_offers").delete().eq("id", id);
+    let query = supabase.from("special_offers").delete().eq("id", id);
+
+    if (hotelId) {
+        query = query.eq("hotel_id", hotelId);
+    }
+
+    return query;
 }

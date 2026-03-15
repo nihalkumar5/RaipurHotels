@@ -19,6 +19,7 @@ export default function BrandingPage() {
     const { offers, loading: loadingOffers } = useSpecialOffers(branding?.id);
     const [newOffer, setNewOffer] = useState<Partial<SpecialOffer>>({ title: "", description: "", image_url: "", is_active: true });
     const [isAddingOffer, setIsAddingOffer] = useState(false);
+    const [deletingOfferId, setDeletingOfferId] = useState<string | null>(null);
 
     useEffect(() => {
         if (branding) {
@@ -47,6 +48,20 @@ export default function BrandingPage() {
 
         setShowSuccess(true);
         setTimeout(() => setShowSuccess(false), 3000);
+    };
+
+    const handleDeleteOffer = async (offerId: string) => {
+        if (!branding?.id || deletingOfferId) {
+            return;
+        }
+
+        setDeletingOfferId(offerId);
+        const { error } = await deleteSpecialOffer(offerId, branding.id);
+        setDeletingOfferId(null);
+
+        if (error) {
+            alert(`Failed to delete offer: ${error.message || "Unknown error"}`);
+        }
     };
 
     const colors = [
@@ -568,8 +583,9 @@ export default function BrandingPage() {
                                                 <p className="text-[10px] text-slate-400 truncate max-w-[150px]">{offer.description}</p>
                                             </div>
                                             <button
-                                                onClick={() => deleteSpecialOffer(offer.id)}
-                                                className="opacity-0 group-hover:opacity-100 p-2 text-red-500 hover:bg-red-50 rounded-lg transition-all"
+                                                onClick={() => handleDeleteOffer(offer.id)}
+                                                disabled={deletingOfferId === offer.id}
+                                                className="opacity-0 group-hover:opacity-100 p-2 text-red-500 hover:bg-red-50 rounded-lg transition-all disabled:opacity-50"
                                             >
                                                 <Trash2 className="w-4 h-4" />
                                             </button>
