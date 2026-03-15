@@ -5,15 +5,8 @@ import {
     ArrowLeft,
     CheckCircle2,
     ChevronRight,
-    Clock,
-    Loader2,
-    MapPin,
     Phone,
-    PlayCircle,
-    RefreshCcw,
     Sparkles,
-    UserRound,
-    XCircle,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useParams, useRouter } from "next/navigation";
@@ -103,8 +96,8 @@ const getTimelineSteps = (status: RequestStatus): TimelineStep[] => {
     return [
         { key: "received", label: "Request Received", active: statusRank[status] >= 1 },
         { key: "assigned", label: "Staff Assigned", active: statusRank[status] >= 2 },
-        { key: "ontheway", label: "On the way", active: statusRank[status] >= 3 },
-        { key: "completed", label: "Completed", active: statusRank[status] >= 4 },
+        { key: "ontheway", label: "Staff On The Way", active: statusRank[status] >= 3 },
+        { key: "completed", label: "Delivered", active: statusRank[status] >= 4 },
     ];
 };
 
@@ -147,7 +140,6 @@ export default function StatusPage() {
     const requests = useSupabaseRequests(branding?.id, roomNumber, checkedInAt);
     const prevRequestsRef = useRef(requests);
     const [selectedRequestId, setSelectedRequestId] = useState<string | null>(null);
-    const [isCancelling, setIsCancelling] = useState(false);
 
     useEffect(() => {
         if (!prevRequestsRef.current || prevRequestsRef.current.length === 0) {
@@ -207,18 +199,10 @@ export default function StatusPage() {
     const secondaryRequests = sortedActiveRequests.filter((request) => request.id !== primaryRequest?.id);
     const supportPhone = branding?.receptionPhone?.trim();
 
-    const handleCancelRequest = async (requestId: string) => {
-        if (isCancelling) return;
-
-        setIsCancelling(true);
-        await updateSupabaseRequestStatus(requestId, "Rejected");
-        setIsCancelling(false);
-    };
-
     const renderTimeline = (request: HotelRequest) => {
         const steps = getTimelineSteps(request.status);
         return (
-            <div className="space-y-4">
+            <div className="space-y-5">
                 {steps.map((step, index) => {
                     const isLast = index === steps.length - 1;
                     return (
@@ -241,11 +225,8 @@ export default function StatusPage() {
                                     />
                                 )}
                             </div>
-                            <div className="pt-[-2px]">
+                            <div>
                                 <p className="text-[13px] font-semibold text-[#1F1F1F]">{step.label}</p>
-                                <p className="mt-0.5 text-[10px] uppercase tracking-[0.18em] text-slate-400">
-                                    {step.active ? "Active" : "Pending"}
-                                </p>
                             </div>
                         </div>
                     );
@@ -264,7 +245,7 @@ export default function StatusPage() {
                 key={request.id}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="overflow-hidden rounded-[20px] border border-[#EEE7DC] bg-white p-6 shadow-[0_10px_25px_rgba(0,0,0,0.06)]"
+                className="overflow-hidden rounded-[22px] border border-[#EEE7DC] bg-white p-6 shadow-[0_8px_24px_rgba(0,0,0,0.06)]"
             >
                 <div className="flex items-start justify-between gap-4">
                     <div>
@@ -274,24 +255,17 @@ export default function StatusPage() {
                         <h2 className="mt-2 font-serif text-[28px] font-semibold leading-none text-[#1F1F1F]">
                             {request.type}
                         </h2>
-                        <div className="mt-4 flex flex-wrap gap-2">
-                            <span className={`rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] ${getStatusTone(request.status)}`}>
-                                {request.status}
-                            </span>
-                            {isLive && (
-                                <span className="inline-flex items-center gap-1 rounded-full bg-[#FDF2E5] px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-[#B98945]">
-                                    <span className="h-2 w-2 animate-pulse rounded-full bg-[#B98945]" />
-                                    Live Tracking
-                                </span>
-                            )}
-                        </div>
+                        <p className="mt-4 text-[15px] font-semibold text-[#1F1F1F]">{request.status}</p>
                     </div>
-                    <span className="rounded-full bg-[#FDECEC] px-3 py-1.5 text-[12px] font-black uppercase tracking-[0.12em] text-[#E5484D]">
-                        Live
-                    </span>
+                    {isLive && (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-[#FDECEC] px-3 py-1.5 text-[12px] font-black uppercase tracking-[0.12em] text-[#E5484D]">
+                            <span className="h-2 w-2 rounded-full bg-[#E5484D] animate-[pulse_2s_infinite]" />
+                            Live
+                        </span>
+                    )}
                 </div>
 
-                <div className="mt-6 grid grid-cols-2 gap-4 rounded-[18px] bg-[#FAF8F3] p-4">
+                <div className="mt-6 flex gap-10 rounded-[14px] bg-[#F6F2EC] p-4">
                     <div>
                         <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Requested</p>
                         <p className="mt-1 text-[16px] font-semibold text-[#1F1F1F]">{request.time}</p>
@@ -313,23 +287,28 @@ export default function StatusPage() {
                     <div className="flex items-center justify-between">
                         <div>
                             <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Staff Coming To Your Room</p>
-                            <p className="mt-1 text-[13px] font-semibold text-[#1F1F1F]">
-                                {staff.team}
-                            </p>
+                            <p className="mt-1 text-[15px] font-semibold text-[#1F1F1F]">{staff.team}</p>
+                            <p className="mt-1 text-[12px] text-slate-500">{staff.role}</p>
                         </div>
-                        <span className="rounded-full bg-white px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-[#B98945]">
-                            ETA {staff.eta}
+                        <span className="rounded-full bg-[#F3E6D3] px-3 py-1.5 text-[12px] font-semibold text-[#9C6B2E]">
+                            Arriving in {staff.eta}
                         </span>
                     </div>
 
-                    <div className="relative mt-4 h-8">
-                        <div className="absolute left-0 right-0 top-1/2 h-[2px] -translate-y-1/2 rounded-full bg-[#E9E3DA]" />
+                    <div className="mt-4 flex items-center justify-between text-[11px] font-semibold text-slate-500">
+                        <span>Staff</span>
+                        <span>Your Room</span>
+                    </div>
+                    <div className="relative mt-2 h-8">
+                        <div className="absolute left-6 right-6 top-1/2 h-[2px] -translate-y-1/2 rounded-full bg-[#E9E3DA]" />
+                        <div className="absolute left-6 top-1/2 h-3 w-3 -translate-y-1/2 rounded-full bg-[#CFA46A]" />
+                        <div className="absolute right-6 top-1/2 h-3 w-3 -translate-y-1/2 rounded-full bg-[#E9E3DA]" />
                         <motion.div
-                            animate={{ left: trackerProgress }}
-                            transition={{ duration: 0.6, ease: "easeOut" }}
+                            animate={{ left: trackerProgress, scale: [1, 1.1, 1] }}
+                            transition={{ left: { duration: 0.6, ease: "easeOut" }, scale: { duration: 2, repeat: Infinity } }}
                             className="absolute top-1/2 h-3.5 w-3.5 -translate-y-1/2 rounded-full bg-[#CFA46A] shadow-[0_0_0_6px_rgba(207,164,106,0.14)]"
                         />
-                        <div className="absolute left-0 top-1/2 -translate-y-1/2 text-[18px]">🚶</div>
+                        <div className="absolute left-0 top-1/2 -translate-y-1/2 text-[18px]">👨‍💼</div>
                         <div className="absolute right-0 top-1/2 -translate-y-1/2 text-[18px]">🏨</div>
                     </div>
                 </div>
@@ -339,23 +318,9 @@ export default function StatusPage() {
                     <div className="mt-4">{renderTimeline(request)}</div>
                 </div>
 
-                <div className="mt-6 rounded-[18px] border border-[#F1E7D8] bg-[#FAF8F3] p-4">
-                    <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Assigned Staff</p>
-                    <div className="mt-3 flex items-center gap-3">
-                        <div className="flex h-11 w-11 items-center justify-center rounded-full bg-white shadow-sm">
-                            <UserRound className="h-5 w-5 text-[#1F1F1F]" />
-                        </div>
-                        <div>
-                            <p className="text-[15px] font-semibold text-[#1F1F1F]">{staff.team}</p>
-                            <p className="text-[12px] text-slate-500">{staff.role}</p>
-                        </div>
-                    </div>
-                    <p className="mt-3 text-[12px] font-medium text-[#B98945]">ETA: {staff.eta}</p>
-                </div>
-
                 <div className="mt-6">
                     <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Need Help?</p>
-                    <div className="mt-3 grid grid-cols-2 gap-3">
+                    <div className="mt-3">
                         {supportPhone ? (
                             <a
                                 href={`tel:${supportPhone}`}
@@ -374,19 +339,6 @@ export default function StatusPage() {
                                 Call Reception
                             </button>
                         )}
-                        <button
-                            type="button"
-                            onClick={() => handleCancelRequest(request.id)}
-                            disabled={isCancelling}
-                            className="flex items-center justify-center gap-2 rounded-[16px] border border-[#E8DECE] bg-white px-4 py-3 text-[12px] font-semibold text-[#1F1F1F]"
-                        >
-                            {isCancelling ? (
-                                <Loader2 className="h-4 w-4 animate-spin" />
-                            ) : (
-                                <XCircle className="h-4 w-4" />
-                            )}
-                            Cancel Request
-                        </button>
                     </div>
                 </div>
             </motion.div>
@@ -395,16 +347,20 @@ export default function StatusPage() {
 
     return (
         <div className="min-h-screen bg-[#F8F5EF] px-5 pb-40 pt-8 text-slate-900">
-            <div className="mb-8 flex items-center justify-between">
-                <button
-                    onClick={() => router.back()}
-                    className="flex h-11 w-11 items-center justify-center rounded-2xl border border-white bg-white shadow-sm transition-transform active:scale-95"
-                >
-                    <ArrowLeft className="h-5 w-5 text-[#1F1F1F]" />
-                </button>
-                <h1 className="font-serif text-[28px] font-semibold text-[#1F1F1F]">Live Request</h1>
+            <div className="mb-8 flex items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                    <button
+                        onClick={() => router.back()}
+                        className="flex h-11 w-11 items-center justify-center rounded-2xl border border-white bg-white shadow-sm transition-transform active:scale-95"
+                    >
+                        <ArrowLeft className="h-5 w-5 text-[#1F1F1F]" />
+                    </button>
+                    <div>
+                        <h1 className="font-serif text-[24px] font-semibold text-[#1F1F1F]">Live Request</h1>
+                    </div>
+                </div>
                 <span className="inline-flex items-center gap-1 rounded-full bg-[#FDECEC] px-3 py-1.5 text-[12px] font-black uppercase tracking-[0.12em] text-[#E5484D]">
-                    <span className="h-2 w-2 animate-pulse rounded-full bg-[#E5484D]" />
+                    <span className="h-2 w-2 rounded-full bg-[#E5484D] animate-[pulse_2s_infinite]" />
                     Live
                 </span>
             </div>
