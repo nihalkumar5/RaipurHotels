@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import { useHotelBranding, saveHotelBranding, HotelBranding, useSpecialOffers, saveSpecialOffer, deleteSpecialOffer, SpecialOffer } from "@/utils/store";
-import { Palette, Layout, Type, Save, Check, RefreshCw, Phone, Plus, Trash2, Image as ImageIcon, Tag, Utensils, Clock, MessageSquare, Sparkles } from "lucide-react";
+import { Palette, Layout, Type, Save, Check, RefreshCw, Phone, Plus, Trash2, Image as ImageIcon, Tag, Utensils, Clock, MessageSquare, Sparkles, Car } from "lucide-react";
 import { motion } from "framer-motion";
 
 export default function BrandingPage() {
@@ -277,6 +277,47 @@ export default function BrandingPage() {
                                         className="w-full bg-slate-50 border border-slate-100 rounded-2xl py-3 px-4 font-bold text-slate-900 outline-none focus:ring-2 transition-all"
                                     />
                                 </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm">
+                        <div className="flex items-center mb-6">
+                            <Car className="w-5 h-5 text-blue-600 mr-3" style={{ color: config.primaryColor }} />
+                            <h2 className="text-xl font-black text-slate-900">Airport Transfer Pricing</h2>
+                        </div>
+                        <p className="text-xs text-slate-400 font-medium mb-6">These prices appear on the guest Airport Transfer page. Leave all empty to show "Coming Soon".</p>
+
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Sedan (One Way)</label>
+                                <input
+                                    type="text"
+                                    placeholder="e.g. ₹1,200"
+                                    value={config.airportTransferCharge1 || ""}
+                                    onChange={(e) => setConfig({ ...config, airportTransferCharge1: e.target.value })}
+                                    className="w-full bg-slate-50 border border-slate-100 rounded-2xl py-3 px-4 font-bold text-slate-900 outline-none focus:ring-2 transition-all"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">SUV (One Way)</label>
+                                <input
+                                    type="text"
+                                    placeholder="e.g. ₹2,000"
+                                    value={config.airportTransferCharge2 || ""}
+                                    onChange={(e) => setConfig({ ...config, airportTransferCharge2: e.target.value })}
+                                    className="w-full bg-slate-50 border border-slate-100 rounded-2xl py-3 px-4 font-bold text-slate-900 outline-none focus:ring-2 transition-all"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Luxury (One Way)</label>
+                                <input
+                                    type="text"
+                                    placeholder="e.g. ₹3,500"
+                                    value={config.airportTransferCharge3 || ""}
+                                    onChange={(e) => setConfig({ ...config, airportTransferCharge3: e.target.value })}
+                                    className="w-full bg-slate-50 border border-slate-100 rounded-2xl py-3 px-4 font-bold text-slate-900 outline-none focus:ring-2 transition-all"
+                                />
                             </div>
                         </div>
                     </section>

@@ -25,6 +25,9 @@ type HotelRow = {
     late_checkout_charge_1?: string | null;
     late_checkout_charge_2?: string | null;
     late_checkout_charge_3?: string | null;
+    airport_transfer_charge_1?: string | null;
+    airport_transfer_charge_2?: string | null;
+    airport_transfer_charge_3?: string | null;
     checkout_message?: string | null;
     google_review_link?: string | null;
     welcome_message?: string | null;
@@ -58,6 +61,9 @@ const mapHotelRowToBranding = (row: HotelRow): HotelBranding => ({
     lateCheckoutCharge1: row.late_checkout_charge_1 ?? undefined,
     lateCheckoutCharge2: row.late_checkout_charge_2 ?? undefined,
     lateCheckoutCharge3: row.late_checkout_charge_3 ?? undefined,
+    airportTransferCharge1: row.airport_transfer_charge_1 ?? undefined,
+    airportTransferCharge2: row.airport_transfer_charge_2 ?? undefined,
+    airportTransferCharge3: row.airport_transfer_charge_3 ?? undefined,
     checkoutMessage: row.checkout_message ?? undefined,
     googleReviewLink: row.google_review_link ?? undefined,
     welcomeMessage: row.welcome_message ?? undefined,
@@ -193,6 +199,9 @@ export async function saveHotelBranding(id: string, updates: Partial<HotelBrandi
             late_checkout_charge_1: updates.lateCheckoutCharge1,
             late_checkout_charge_2: updates.lateCheckoutCharge2,
             late_checkout_charge_3: updates.lateCheckoutCharge3,
+            airport_transfer_charge_1: updates.airportTransferCharge1,
+            airport_transfer_charge_2: updates.airportTransferCharge2,
+            airport_transfer_charge_3: updates.airportTransferCharge3,
             checkout_message: updates.checkoutMessage,
             google_review_link: updates.googleReviewLink,
             welcome_message: updates.welcomeMessage,

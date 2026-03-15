@@ -27,6 +27,9 @@ export interface HotelBranding {
     lateCheckoutCharge1?: string;
     lateCheckoutCharge2?: string;
     lateCheckoutCharge3?: string;
+    airportTransferCharge1?: string;
+    airportTransferCharge2?: string;
+    airportTransferCharge3?: string;
     checkoutMessage?: string;
     googleReviewLink?: string;
     welcomeMessage?: string;

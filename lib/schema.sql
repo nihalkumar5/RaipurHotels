@@ -25,6 +25,9 @@ CREATE TABLE IF NOT EXISTS hotels (
     late_checkout_charge_1 TEXT DEFAULT 'Complimentary',
     late_checkout_charge_2 TEXT DEFAULT '₹1,500',
     late_checkout_charge_3 TEXT DEFAULT 'Full Day Rate',
+    airport_transfer_charge_1 TEXT,
+    airport_transfer_charge_2 TEXT,
+    airport_transfer_charge_3 TEXT,
     checkout_message TEXT,
     google_review_link TEXT,
     welcome_message TEXT,
@@ -268,6 +271,9 @@ ALTER TABLE hotels ADD COLUMN IF NOT EXISTS late_checkout_phone TEXT;
 ALTER TABLE hotels ADD COLUMN IF NOT EXISTS late_checkout_charge_1 TEXT DEFAULT 'Complimentary';
 ALTER TABLE hotels ADD COLUMN IF NOT EXISTS late_checkout_charge_2 TEXT DEFAULT '₹1,500';
 ALTER TABLE hotels ADD COLUMN IF NOT EXISTS late_checkout_charge_3 TEXT DEFAULT 'Full Day Rate';
+ALTER TABLE hotels ADD COLUMN IF NOT EXISTS airport_transfer_charge_1 TEXT;
+ALTER TABLE hotels ADD COLUMN IF NOT EXISTS airport_transfer_charge_2 TEXT;
+ALTER TABLE hotels ADD COLUMN IF NOT EXISTS airport_transfer_charge_3 TEXT;
 
 -- 8. Menu Items Table
 CREATE TABLE IF NOT EXISTS menu_items (
