@@ -366,67 +366,75 @@ export default function GuestDashboard() {
                 initial={{ opacity: 0, y: 15 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.6 }}
-                className="mb-12 px-0 sm:px-6"
+                className="mb-8 px-4"
             >
-                <div className="bg-[#E8DCCB] rounded-[40px] p-10 relative overflow-hidden shadow-[0_50px_100px_rgba(0,0,0,0.12)] border border-white/40 noise group/container">
-                    {/* 1. Subtle Textured/Illustrated Background Layer - Split View (Right Side Only) */}
-                    <div className="absolute inset-y-0 right-0 w-[55%] z-0 opacity-[0.6] pointer-events-none transition-transform duration-1000 group-hover/container:scale-105 origin-right">
+                <div className="relative overflow-hidden rounded-[24px] border border-white/30 p-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.4),0_20px_60px_rgba(0,0,0,0.15)]">
+                    <div
+                        className="absolute inset-0"
+                        style={{
+                            background: "linear-gradient(135deg, #E7DCCB, #D9C9B2)",
+                        }}
+                    />
+                    {/* Decorative illustration */}
+                    <div className="pointer-events-none absolute -bottom-5 -right-10 z-0 h-[220px] w-[220px] opacity-35">
                         <img 
                             src="/images/luxury_hotel_ultra_premium_bg.png" 
                             alt="Background Illustration"
-                            className="w-full h-full object-cover"
+                            className="h-full w-full object-cover"
                         />
-                        <div className="absolute inset-0 bg-gradient-to-r from-[#E8DCCB] via-[#E8DCCB]/20 to-transparent" />
                     </div>
 
                     {/* 2. Foreground Layer (Header & Tiles) */}
                     <div className="relative z-10">
-                        <div className="mb-8">
-                            <h2 className="text-[24px] font-serif font-bold text-[#1F1F1F] leading-tight mb-1 tracking-tight">Quick Services</h2>
-                            <p className="text-[10px] font-black text-[#1F1F1F]/40 uppercase tracking-[0.25em]">Personalized for your stay</p>
+                        <div className="mb-5">
+                            <h2 className="mb-2 font-serif text-[28px] font-semibold leading-tight text-[#1F1F1F]">Quick Services</h2>
+                            <p className="text-[12px] font-semibold uppercase tracking-[0.16em] text-[#1F1F1F]/60">Personalized for your stay</p>
                         </div>
                         
-                        <div className="flex flex-wrap items-center gap-3">
+                        <div className="mt-5 grid grid-cols-2 gap-4">
                             {[
                                 { 
                                     label: "Reception", 
                                     internalName: "Reception",
-                                    icon: <Phone className="w-[22px] h-[22px]" />, 
+                                    icon: <Phone className="h-7 w-7" />, 
                                     color: "#B45309",
                                 },
                                 { 
                                     label: "Tea/Coffee", 
                                     internalName: "Tea / Coffee",
-                                    icon: <Coffee className="w-[22px] h-[22px]" />, 
+                                    icon: <Coffee className="h-7 w-7" />, 
                                     color: "#8B5E3C",
                                     hasOptions: true
                                 },
                                 { 
                                     label: "Water", 
                                     internalName: "Mineral Water",
-                                    icon: <Droplets className="w-[22px] h-[22px]" />, 
+                                    icon: <Droplets className="h-7 w-7" />, 
                                     color: "#5DA7B1"
                                 },
                                 { 
                                     label: "Towels", 
                                     internalName: "Towels",
-                                    icon: <Layers className="w-[22px] h-[22px]" />, 
+                                    icon: <Layers className="h-7 w-7" />, 
                                     color: "#7A8D84"
                                 }
                             ].map((service, i) => (
                                 <motion.button
                                     key={i}
-                                    whileHover={{ y: -5, scale: 1.02 }}
-                                    whileTap={{ scale: 0.96 }}
+                                    whileHover={{ y: -3, boxShadow: "0 18px 40px rgba(0,0,0,0.15)" }}
+                                    whileTap={{ scale: 0.97 }}
                                     transition={{ type: "spring", stiffness: 400, damping: 25 }}
                                     onClick={() => handleTileClick(service)}
-                                    className="flex flex-col items-center justify-center gap-2 w-[132px] h-[94px] rounded-[26px] bg-white/65 backdrop-blur-2xl shadow-[0_15px_40px_rgba(0,0,0,0.08)] border border-white relative overflow-hidden group/tile"
+                                    className="group/tile relative flex h-[100px] w-full flex-col items-center justify-center gap-2 overflow-hidden rounded-[20px] border border-white/50 bg-white/85 p-[18px] shadow-[0_12px_30px_rgba(0,0,0,0.08)] backdrop-blur-[8px] transition-all duration-200 [transform:perspective(1000px)_rotateX(2deg)]"
                                 >
                                     <div className="absolute inset-0 bg-gradient-to-br from-white/40 to-transparent opacity-0 group-hover/tile:opacity-100 transition-opacity duration-500" />
-                                    <div style={{ color: service.color }} className="relative z-10 mb-1 transition-transform duration-300 group-hover/tile:scale-110">
+                                    <div
+                                        style={{ color: service.color }}
+                                        className="relative z-10 flex h-10 w-10 items-center justify-center rounded-[12px] bg-black/5 transition-transform duration-300 group-hover/tile:scale-110"
+                                    >
                                         {service.icon}
                                     </div>
-                                    <span className="text-[13px] font-black text-[#1F1F1F] leading-tight tracking-tight text-center font-sans relative z-10">
+                                    <span className="relative z-10 text-center font-sans text-[12px] font-black leading-tight tracking-tight text-[#1F1F1F]">
                                         {service.label}
                                     </span>
                                 </motion.button>
