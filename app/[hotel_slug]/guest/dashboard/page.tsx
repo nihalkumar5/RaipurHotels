@@ -126,6 +126,7 @@ export default function GuestDashboard() {
     const activeRequests = requests.filter(r => r.status === "Pending" || r.status === "In Progress");
     const displayCheckoutDate = formatCheckoutDate(checkoutDate);
     const displayCheckoutTime = formatCheckoutTime(checkoutTime);
+    const guestCountLabel = `${numGuests || 1} ${(numGuests || 1) === 1 ? "Guest" : "Guests"}`;
 
     const handleQuickRequest = async (type: string, notes: string) => {
         if (!branding?.id || submittingType) return;
@@ -159,13 +160,6 @@ export default function GuestDashboard() {
             <div className="w-12 h-12 border-4 border-slate-900 border-t-transparent rounded-full animate-spin"></div>
         </div>
     );
-
-    const getTimeGreeting = () => {
-        const hour = new Date().getHours();
-        if (hour < 12) return "Good Morning";
-        if (hour < 17) return "Good Afternoon";
-        return "Good Evening";
-    };
 
     const container = {
         hidden: { opacity: 0 },
@@ -206,12 +200,12 @@ export default function GuestDashboard() {
     };
 
     return (
-        <div className="min-h-screen overflow-x-hidden bg-[#FDFBF9] pb-24 font-sans text-[#1F1F1F] md:mx-auto md:max-w-[520px]">
+        <div className="min-h-screen overflow-x-hidden bg-[#FDFBF9] pb-32 font-sans text-[#1F1F1F] md:mx-auto md:max-w-[520px]">
             {/* 1. Hero Hotel Card - "Halo Effect" */}
             <motion.section 
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                className="relative h-[560px] w-full overflow-hidden sm:h-[520px]"
+                className="relative h-[530px] w-full overflow-hidden sm:h-[500px]"
             >
                 {/* Full-bleed Hotel Image Background */}
                 <div className="absolute inset-0 z-0">
@@ -220,47 +214,52 @@ export default function GuestDashboard() {
                         className="w-full h-full object-cover" 
                         alt="Hotel Exterior" 
                     />
-                    <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent transparent 40% to-[#EFE7DD] opacity-90" style={{ background: 'linear-gradient(to bottom, transparent 40%, rgba(239,231,221,0.9) 80%)' }} />
+                    <div
+                        className="absolute inset-0"
+                        style={{
+                            background:
+                                "linear-gradient(rgba(0,0,0,0.35), rgba(0,0,0,0.45)), linear-gradient(to bottom, rgba(0,0,0,0.05) 15%, rgba(239,231,221,0.92) 88%)",
+                        }}
+                    />
                 </div>
 
                 {/* Glass Guest Portal Overlay */}
-                <div className="absolute inset-x-4 top-[112px] z-10 sm:inset-x-6 sm:top-[96px]">
+                <div className="absolute inset-x-4 top-[110px] z-10 sm:inset-x-6 sm:top-[92px]">
                     <motion.div 
                         initial={{ y: 20, opacity: 0 }}
                         animate={{ y: 0, opacity: 1 }}
                         transition={{ delay: 0.3, duration: 0.8 }}
-                        className="relative rounded-[30px] border border-white/40 bg-white/60 p-7 shadow-[0_20px_40px_rgba(0,0,0,0.12)] backdrop-blur-xl sm:rounded-[26px] sm:p-8"
+                        className="relative rounded-[30px] border border-white/30 bg-white/75 p-7 shadow-[0_25px_60px_rgba(0,0,0,0.2)] backdrop-blur-[18px] [filter:drop-shadow(0_40px_50px_rgba(0,0,0,0.2))] sm:rounded-[26px] sm:p-8"
                     >
-                        <div className="flex items-start justify-between mb-8">
+                        <div className="mb-8 flex items-start justify-between gap-4">
                             <div>
-                                <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[#CFA46A] mb-1.5">{getTimeGreeting()}</p>
-                                <h1 className="text-[22px] font-serif font-bold text-[#1F1F1F] tracking-tight mb-1">
+                                <h1 className="mb-2 text-[28px] font-serif font-bold uppercase leading-none tracking-tight text-[#1F1F1F]">
                                     {branding?.name || "Mountain Lodge"}
                                 </h1>
-                                <div className="text-[#CFA46A] text-xs mb-2">★★★★★</div>
-                                <div className="flex items-center text-slate-800/60">
-                                    <MapPin className="w-3 h-3 mr-1" />
-                                    <p className="text-[11px] font-bold uppercase tracking-[0.1em]">
+                                <div className="mb-3 text-sm tracking-[0.22em] text-[#C6A25A]">★★★★★</div>
+                                <div className="flex items-center text-slate-700/75">
+                                    <MapPin className="mr-1.5 h-3.5 w-3.5" />
+                                    <p className="text-[14px] font-semibold tracking-[0.08em]">
                                         {(branding as any)?.address || "Kiev, Ukraine"}
                                     </p>
                                 </div>
                             </div>
-                            <div className="flex items-center gap-1.5 bg-black/85 backdrop-blur-md text-white px-3 py-1.5 rounded-full shadow-lg">
-                                <Check className="w-3 h-3 text-[#CFA46A]" />
-                                <span className="text-[10px] font-black uppercase tracking-widest">Verified</span>
+                            <div className="flex items-center gap-1.5 rounded-xl bg-[#111111] px-3 py-2 text-white shadow-[0_0_10px_rgba(0,0,0,0.2)]">
+                                <Check className="h-3.5 w-3.5 text-[#CFA46A]" />
+                                <span className="text-[10px] font-black uppercase tracking-[0.18em]">Verified Guest</span>
                             </div>
                         </div>
 
-                        <div className="pt-6 border-t border-black/5 flex items-center justify-between">
+                        <div className="flex items-center justify-between border-t border-black/5 pt-6">
                             <div className="flex flex-col">
-                                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-800/40 mb-1">Checkout</p>
-                                <p className="text-[16px] font-black text-[#1F1F1F]">{displayCheckoutDate}</p>
+                                <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-800/40">Checkout</p>
+                                <p className="text-[17px] font-black tracking-[0.04em] text-[#C6A25A]">
+                                    {displayCheckoutDate} <span className="px-1.5 text-[#B9A388]">·</span> {displayCheckoutTime}
+                                </p>
                             </div>
-                            <div className="flex flex-col items-end gap-1">
-                                <div className="bg-[#CFA46A] px-4 py-2 rounded-xl shadow-[0_4px_12px_rgba(207,164,106,0.3)]">
-                                    <p className="text-[12px] font-black text-white uppercase tracking-wider">{displayCheckoutTime}</p>
-                                </div>
-                                <span className="text-[8px] font-black text-[#CFA46A] uppercase tracking-widest animate-pulse">Request Extension</span>
+                            <div className="flex flex-col items-end gap-1 text-right">
+                                <span className="text-[10px] font-black uppercase tracking-[0.18em] text-[#111111]">Verified Guest</span>
+                                <span className="text-[9px] font-bold uppercase tracking-[0.16em] text-slate-500">Change</span>
                             </div>
                         </div>
                     </motion.div>
@@ -279,9 +278,9 @@ export default function GuestDashboard() {
                 initial={{ opacity: 0, y: 15 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.5 }}
-                className="relative z-10 mb-10 mt-4 px-4 sm:mt-0 sm:px-6"
+                className="relative z-10 mb-8 mt-5 px-4 sm:mt-0 sm:px-6"
             >
-                <div className="flex h-[85px] items-center justify-between rounded-[24px] border border-white/20 bg-[#F3EAE1]/95 px-6 py-4 shadow-[0_8px_20px_rgba(0,0,0,0.06)] sm:rounded-[18px]">
+                <div className="flex h-[88px] items-center justify-between rounded-[24px] border border-white/20 bg-[#F3EAE1]/96 px-4 py-4 shadow-[0_8px_20px_rgba(0,0,0,0.06)] sm:rounded-[18px]">
                     {/* Room Section */}
                     <div className="flex-1 flex flex-col items-center">
                         <span className="text-[9px] font-black text-slate-400 uppercase tracking-[0.25em] mb-2 opacity-70">Room</span>
@@ -298,7 +297,7 @@ export default function GuestDashboard() {
                         <span className="text-[9px] font-black text-slate-400 uppercase tracking-[0.25em] mb-2 opacity-70">Staying</span>
                         <div className="flex items-center gap-1.5">
                             <Users className="w-3.5 h-3.5 text-[#CFA46A] stroke-[2.5]" />
-                            <span className="text-[15px] font-black text-[#1F1F1F] leading-none tracking-tight">{numGuests || 1} Guest</span>
+                            <span className="text-[15px] font-black text-[#1F1F1F] leading-none tracking-tight">{guestCountLabel}</span>
                         </div>
                     </div>
 
@@ -308,9 +307,9 @@ export default function GuestDashboard() {
                     <div className="flex-1 flex flex-col items-center">
                         <motion.button 
                             whileTap={{ scale: 0.96 }}
-                            whileHover={{ y: -2 }}
+                            whileHover={{ scale: 1.03 }}
                             onClick={() => handleQuickRequest("Late Checkout", "Guest requested late checkout extension")}
-                            className="bg-[#A62626] rounded-[16px] px-2 py-4 flex items-center justify-center shadow-[0_4px_0_0_#751B1B] hover:shadow-[0_6px_0_0_#751B1B] active:shadow-none active:translate-y-[4px] transition-all cursor-pointer border border-[#C53030]/30 w-full min-h-[58px]"
+                            className="flex min-h-[58px] w-full items-center justify-center rounded-[16px] border border-[#C53030]/30 bg-[#C62828] px-[18px] py-[10px] shadow-[0_4px_0_0_#751B1B] transition-all hover:shadow-[0_6px_0_0_#751B1B] active:translate-y-[4px] active:shadow-none"
                         >
                             <span className="text-[10px] font-black text-white uppercase tracking-wider leading-none text-center">
                                 Late Checkout
@@ -325,7 +324,7 @@ export default function GuestDashboard() {
                 initial={{ opacity: 0, y: 15 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.55 }}
-                className="mb-8 px-4 sm:px-6"
+                className="mb-10 px-4 sm:px-6"
             >
                 <div className="grid grid-cols-3 gap-3">
                     {[
@@ -337,9 +336,9 @@ export default function GuestDashboard() {
                             key={i}
                             whileTap={{ scale: 0.95 }}
                             onClick={() => router.push(`/${hotelSlug}/guest/${s.path}`)}
-                            className="flex min-h-[94px] flex-col items-center justify-start rounded-[20px] border border-white/70 bg-white/84 px-3 py-3.5 text-center shadow-[0_10px_22px_rgba(0,0,0,0.045)] backdrop-blur-xl"
+                            className="flex min-h-[92px] flex-col items-center justify-start rounded-[20px] border border-white/70 bg-white/88 px-3 py-3.5 text-center shadow-[0_10px_22px_rgba(0,0,0,0.045)] backdrop-blur-xl"
                         >
-                            <div className="mb-2.5 flex h-9 w-9 items-center justify-center rounded-[16px] bg-[#F3EAE1] text-[#1F1F1F] shadow-inner">
+                            <div className="mb-2.5 flex h-9 w-9 items-center justify-center rounded-[16px] bg-[#F4F1EC] text-[#1F1F1F] shadow-inner">
                                 {s.icon}
                             </div>
                             <h3 className="mb-1 text-[9px] font-black leading-tight tracking-tight text-[#1F1F1F]">{s.label}</h3>
@@ -355,9 +354,9 @@ export default function GuestDashboard() {
                             key={i}
                             whileTap={{ scale: 0.95 }}
                             onClick={() => s.path ? router.push(`/${hotelSlug}/guest/${s.path}`) : s.action?.()}
-                            className="flex min-h-[94px] flex-col items-center justify-start rounded-[20px] border border-white/70 bg-white/84 px-3 py-3.5 text-center shadow-[0_10px_22px_rgba(0,0,0,0.045)] backdrop-blur-xl"
+                            className="flex min-h-[92px] flex-col items-center justify-start rounded-[20px] border border-white/70 bg-white/88 px-3 py-3.5 text-center shadow-[0_10px_22px_rgba(0,0,0,0.045)] backdrop-blur-xl"
                         >
-                            <div className="mb-2.5 flex h-9 w-9 items-center justify-center rounded-[16px] bg-[#F3EAE1] text-[#1F1F1F] shadow-inner">
+                            <div className="mb-2.5 flex h-9 w-9 items-center justify-center rounded-[16px] bg-[#F4F1EC] text-[#1F1F1F] shadow-inner">
                                 {s.icon}
                             </div>
                             <h3 className="mb-1 text-[9px] font-black leading-tight tracking-tight text-[#1F1F1F]">{s.label}</h3>
