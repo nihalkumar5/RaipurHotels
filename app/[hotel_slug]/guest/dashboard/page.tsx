@@ -329,7 +329,7 @@ export default function GuestDashboard() {
                         { label: "Wi-Fi Info", icon: <Wifi strokeWidth={2.3} />, path: "wifi" },
                         { label: "Room Service", icon: <img src="/icons/dinner-svgrepo-com.svg" alt="Room Service" className="h-8 w-8 object-contain" />, path: "restaurant" },
                         { label: "Taxi", icon: <img src="/icons/taxi-4-svgrepo-com.svg" alt="Taxi" className="h-8 w-8 object-contain" />, path: "services/taxi" },
-                        { label: "Support", icon: <img src="/icons/maintenance-svgrepo-com.svg" alt="Support" className="h-8 w-8 object-contain" />, path: "services/support" },
+                        { label: "Maintenance", icon: <img src="/icons/maintenance-svgrepo-com.svg" alt="Maintenance" className="h-8 w-8 object-contain" />, path: "services/support" },
                         { label: "Laundry", icon: <WashingMachine strokeWidth={2.3} />, path: "services/laundry" },
                         { label: "Amenities", icon: <Bell strokeWidth={2.3} />, path: "services" },
                         { label: "Cleaning", icon: <Sparkles strokeWidth={2.3} />, path: "services/cleaning" },
