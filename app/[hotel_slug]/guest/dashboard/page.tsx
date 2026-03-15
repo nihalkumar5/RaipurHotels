@@ -244,10 +244,6 @@ export default function GuestDashboard() {
                                     </p>
                                 </div>
                             </div>
-                            <div className="flex items-center gap-1.5 rounded-xl bg-[#111111] px-3 py-2 text-white shadow-[0_0_10px_rgba(0,0,0,0.2)]">
-                                <Check className="h-3.5 w-3.5 text-[#CFA46A]" />
-                                <span className="text-[10px] font-black uppercase tracking-[0.18em]">Verified Guest</span>
-                            </div>
                         </div>
 
                         <div className="flex items-center justify-between border-t border-black/5 pt-6">
@@ -257,8 +253,9 @@ export default function GuestDashboard() {
                                     {displayCheckoutDate} <span className="px-1.5 text-[#B9A388]">·</span> {displayCheckoutTime}
                                 </p>
                             </div>
-                            <div className="flex flex-col items-end gap-1 text-right">
-                                <span className="text-[9px] font-bold uppercase tracking-[0.16em] text-slate-500">Change</span>
+                            <div className="flex items-center gap-1.5 rounded-xl bg-[#111111] px-3 py-2 text-white shadow-[0_0_10px_rgba(0,0,0,0.2)]">
+                                <Check className="h-3.5 w-3.5 text-[#CFA46A]" />
+                                <span className="text-[10px] font-black uppercase tracking-[0.18em]">Verified Guest</span>
                             </div>
                         </div>
                     </motion.div>
