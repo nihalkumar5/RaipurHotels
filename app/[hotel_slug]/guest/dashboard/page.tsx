@@ -21,6 +21,66 @@ const renderIcon = (icon: React.ReactNode, className: string) => {
         : icon;
 };
 
+const formatCheckoutDate = (value?: string) => {
+    if (!value) return "Checkout TBD";
+
+    const isoMatch = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (isoMatch) {
+        const [, year, month, day] = isoMatch;
+        const parsed = new Date(Number(year), Number(month) - 1, Number(day));
+        return parsed.toLocaleDateString("en-GB", {
+            day: "numeric",
+            month: "short",
+        });
+    }
+
+    const slashMatch = value.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{2,4})$/);
+    if (slashMatch) {
+        const [, first, second, third] = slashMatch;
+        const year = third.length === 2 ? `20${third}` : third;
+        const parsed = new Date(Number(year), Number(second) - 1, Number(first));
+
+        if (!Number.isNaN(parsed.getTime())) {
+            return parsed.toLocaleDateString("en-GB", {
+                day: "numeric",
+                month: "short",
+            });
+        }
+    }
+
+    const parsed = new Date(value);
+    if (!Number.isNaN(parsed.getTime())) {
+        return parsed.toLocaleDateString("en-GB", {
+            day: "numeric",
+            month: "short",
+        });
+    }
+
+    return value;
+};
+
+const formatCheckoutTime = (value?: string) => {
+    if (!value) return "TBD";
+
+    if (/[ap]m/i.test(value)) {
+        return value.toUpperCase();
+    }
+
+    const timeMatch = value.match(/^(\d{1,2}):(\d{2})$/);
+    if (!timeMatch) return value;
+
+    const [, hourText, minute] = timeMatch;
+    const hours = Number(hourText);
+
+    if (Number.isNaN(hours) || hours > 23) {
+        return value;
+    }
+
+    const period = hours >= 12 ? "PM" : "AM";
+    const normalizedHour = hours % 12 || 12;
+    return `${normalizedHour}:${minute} ${period}`;
+};
+
 export default function GuestDashboard() {
     const router = useRouter();
     const params = useParams();
@@ -64,6 +124,8 @@ export default function GuestDashboard() {
     }, []);
 
     const activeRequests = requests.filter(r => r.status === "Pending" || r.status === "In Progress");
+    const displayCheckoutDate = formatCheckoutDate(checkoutDate);
+    const displayCheckoutTime = formatCheckoutTime(checkoutTime);
 
     const handleQuickRequest = async (type: string, notes: string) => {
         if (!branding?.id || submittingType) return;
@@ -192,11 +254,11 @@ export default function GuestDashboard() {
                         <div className="pt-6 border-t border-black/5 flex items-center justify-between">
                             <div className="flex flex-col">
                                 <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-800/40 mb-1">Checkout</p>
-                                <p className="text-[16px] font-black text-[#1F1F1F]">16 Feb</p>
+                                <p className="text-[16px] font-black text-[#1F1F1F]">{displayCheckoutDate}</p>
                             </div>
                             <div className="flex flex-col items-end gap-1">
                                 <div className="bg-[#CFA46A] px-4 py-2 rounded-xl shadow-[0_4px_12px_rgba(207,164,106,0.3)]">
-                                    <p className="text-[12px] font-black text-white uppercase tracking-wider">11:00 AM</p>
+                                    <p className="text-[12px] font-black text-white uppercase tracking-wider">{displayCheckoutTime}</p>
                                 </div>
                                 <span className="text-[8px] font-black text-[#CFA46A] uppercase tracking-widest animate-pulse">Request Extension</span>
                             </div>

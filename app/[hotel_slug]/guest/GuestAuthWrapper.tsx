@@ -43,6 +43,43 @@ function AuthLogic({ children }: { children: React.ReactNode }) {
     const [error, setError] = useState<string>("");
     const [isVerifying, setIsVerifying] = useState(false);
 
+    const syncGuestSession = (roomData: {
+        checkout_date?: string | null;
+        checkout_time?: string | null;
+        num_guests?: number | null;
+        checked_in_at?: number | null;
+    }) => {
+        const nextCheckoutDate = roomData.checkout_date || "";
+        const nextCheckoutTime = roomData.checkout_time || "";
+        const nextNumGuests = roomData.num_guests || 1;
+        const nextCheckedInAt = roomData.checked_in_at ?? null;
+
+        setCheckoutDate(nextCheckoutDate);
+        setCheckoutTime(nextCheckoutTime);
+        setNumGuests(nextNumGuests);
+        setCheckedInAt(nextCheckedInAt);
+
+        if (nextCheckoutDate) {
+            localStorage.setItem(`hotel_checkout_date_${hotelSlug}`, nextCheckoutDate);
+        } else {
+            localStorage.removeItem(`hotel_checkout_date_${hotelSlug}`);
+        }
+
+        if (nextCheckoutTime) {
+            localStorage.setItem(`hotel_checkout_time_${hotelSlug}`, nextCheckoutTime);
+        } else {
+            localStorage.removeItem(`hotel_checkout_time_${hotelSlug}`);
+        }
+
+        localStorage.setItem(`hotel_num_guests_${hotelSlug}`, nextNumGuests.toString());
+
+        if (nextCheckedInAt) {
+            localStorage.setItem(`hotel_checked_in_at_${hotelSlug}`, nextCheckedInAt.toString());
+        } else {
+            localStorage.removeItem(`hotel_checked_in_at_${hotelSlug}`);
+        }
+    };
+
     useEffect(() => {
         const timestamp = new Date().toLocaleTimeString();
         if (brandingLoading || !hotelSlug) return;
@@ -86,20 +123,9 @@ function AuthLogic({ children }: { children: React.ReactNode }) {
                 verifyBookingPin(branding.id, effectiveRoom, effectivePin).then(res => {
                     if (res.success && res.data) {
                         setIsVerified(true);
-                        setCheckoutDate(res.data.checkout_date || "");
-                        setCheckoutTime(res.data.checkout_time || "");
                         localStorage.setItem(`hotel_room_${hotelSlug}`, effectiveRoom);
                         localStorage.setItem(`hotel_pin_${hotelSlug}`, effectivePin!);
-                        if (res.data.checkout_date) localStorage.setItem(`hotel_checkout_date_${hotelSlug}`, res.data.checkout_date);
-                        if (res.data.checkout_time) localStorage.setItem(`hotel_checkout_time_${hotelSlug}`, res.data.checkout_time);
-                        if (res.data.num_guests) {
-                            setNumGuests(res.data.num_guests);
-                            localStorage.setItem(`hotel_num_guests_${hotelSlug}`, res.data.num_guests.toString());
-                        }
-                        if (res.data.checked_in_at) {
-                            setCheckedInAt(res.data.checked_in_at);
-                            localStorage.setItem(`hotel_checked_in_at_${hotelSlug}`, res.data.checked_in_at.toString());
-                        }
+                        syncGuestSession(res.data);
                     } else {
                         if (res.success === false && effectiveRoom === storedRoom) {
                             localStorage.removeItem(`hotel_room_${hotelSlug}`);
@@ -136,19 +162,7 @@ function AuthLogic({ children }: { children: React.ReactNode }) {
             if (res.success) {
                 localStorage.setItem(`hotel_room_${hotelSlug}`, roomNumber);
                 localStorage.setItem(`hotel_pin_${hotelSlug}`, pin);
-                if (res.data.checkout_date) localStorage.setItem(`hotel_checkout_date_${hotelSlug}`, res.data.checkout_date);
-                if (res.data.checkout_time) localStorage.setItem(`hotel_checkout_time_${hotelSlug}`, res.data.checkout_time);
-                if (res.data.num_guests) {
-                    setNumGuests(res.data.num_guests);
-                    localStorage.setItem(`hotel_num_guests_${hotelSlug}`, res.data.num_guests.toString());
-                }
-                if (res.data.checked_in_at) {
-                    setCheckedInAt(res.data.checked_in_at);
-                    localStorage.setItem(`hotel_checked_in_at_${hotelSlug}`, res.data.checked_in_at.toString());
-                }
-
-                setCheckoutDate(res.data.checkout_date || "");
-                setCheckoutTime(res.data.checkout_time || "");
+                syncGuestSession(res.data);
                 setIsVerified(true);
             } else {
                 setError("Invalid details. Please check with reception.");
@@ -159,6 +173,44 @@ function AuthLogic({ children }: { children: React.ReactNode }) {
         }
         setIsVerifying(false);
     };
+
+    useEffect(() => {
+        if (!branding?.id || !hotelSlug || !isVerified || !roomNumber) return;
+
+        const storedPin = localStorage.getItem(`hotel_pin_${hotelSlug}`);
+        if (!storedPin) return;
+
+        let cancelled = false;
+
+        const refreshGuestSession = async () => {
+            const res = await verifyBookingPin(branding.id, roomNumber, storedPin);
+
+            if (!cancelled && res.success && res.data) {
+                syncGuestSession(res.data);
+            }
+        };
+
+        const handleVisibilityChange = () => {
+            if (document.visibilityState === "visible") {
+                void refreshGuestSession();
+            }
+        };
+
+        void refreshGuestSession();
+        const intervalId = window.setInterval(() => {
+            void refreshGuestSession();
+        }, 30000);
+
+        window.addEventListener("focus", refreshGuestSession);
+        document.addEventListener("visibilitychange", handleVisibilityChange);
+
+        return () => {
+            cancelled = true;
+            window.clearInterval(intervalId);
+            window.removeEventListener("focus", refreshGuestSession);
+            document.removeEventListener("visibilitychange", handleVisibilityChange);
+        };
+    }, [branding?.id, hotelSlug, isVerified, roomNumber]);
 
     if (isVerified === null || brandingLoading) {
         return (
