@@ -18,6 +18,7 @@ CREATE TABLE IF NOT EXISTS hotels (
     wifi_name TEXT,
     wifi_password TEXT,
     reception_phone TEXT,
+    concierge_whatsapp TEXT,
     breakfast_start TEXT DEFAULT '07:00',
     breakfast_end TEXT DEFAULT '10:30',
     lunch_start TEXT DEFAULT '12:30',

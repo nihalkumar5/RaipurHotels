@@ -18,6 +18,7 @@ type HotelRow = {
     wifi_name?: string | null;
     wifi_password?: string | null;
     reception_phone?: string | null;
+    concierge_whatsapp?: string | null;
     breakfast_start?: string | null;
     breakfast_end?: string | null;
     lunch_start?: string | null;
@@ -57,6 +58,7 @@ const mapHotelRowToBranding = (row: HotelRow): HotelBranding => ({
     wifiName: row.wifi_name ?? undefined,
     wifiPassword: row.wifi_password ?? undefined,
     receptionPhone: row.reception_phone ?? undefined,
+    conciergeWhatsapp: row.concierge_whatsapp ?? undefined,
     breakfastStart: row.breakfast_start ?? undefined,
     breakfastEnd: row.breakfast_end ?? undefined,
     lunchStart: row.lunch_start ?? undefined,
@@ -209,6 +211,7 @@ export async function saveHotelBranding(id: string, updates: Partial<HotelBrandi
         wifi_name: normalizeOptionalText(updates.wifiName),
         wifi_password: normalizeOptionalText(updates.wifiPassword),
         reception_phone: normalizeOptionalText(updates.receptionPhone),
+        concierge_whatsapp: normalizeOptionalText(updates.conciergeWhatsapp),
         breakfast_start: normalizeOptionalText(updates.breakfastStart),
         breakfast_end: normalizeOptionalText(updates.breakfastEnd),
         lunch_start: normalizeOptionalText(updates.lunchStart),

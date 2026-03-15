@@ -19,6 +19,7 @@ export interface HotelBranding {
     wifiName?: string;
     wifiPassword?: string;
     receptionPhone?: string;
+    conciergeWhatsapp?: string;
     bgPattern?: string;
     breakfastStart?: string;
     breakfastEnd?: string;

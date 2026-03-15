@@ -201,6 +201,20 @@ export default function BrandingPage() {
                                     />
                                 </div>
                             </div>
+                            <div>
+                                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Concierge WhatsApp Number</label>
+                                <div className="flex items-center bg-slate-50 border border-slate-100 rounded-2xl px-4 py-3 focus-within:ring-2 transition-all">
+                                    <Phone className="w-4 h-4 text-slate-400 mr-3" />
+                                    <input
+                                        type="text"
+                                        placeholder="e.g. +91 98765 43210"
+                                        value={config.conciergeWhatsapp || ""}
+                                        onChange={(e) => setConfig({ ...config, conciergeWhatsapp: e.target.value })}
+                                        className="bg-transparent w-full font-bold text-slate-900 outline-none"
+                                    />
+                                </div>
+                                <p className="mt-2 text-[10px] text-slate-400 font-medium">Used by guest dashboard `Talk to Concierge` chat button.</p>
+                            </div>
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
                                     <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">WiFi Network Name</label>

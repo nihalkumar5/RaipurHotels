@@ -130,6 +130,7 @@ export default function GuestDashboard() {
     const guestCountLabel = `${numGuests || 1} ${(numGuests || 1) === 1 ? "Guest" : "Guests"}`;
     const serviceIconColor = branding?.serviceIconColor || "#2f2f2f";
     const receptionPhone = branding?.receptionPhone?.trim();
+    const conciergeWhatsapp = branding?.conciergeWhatsapp?.trim();
     const heroImage =
         branding?.heroImage ||
         "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&q=80";
@@ -226,6 +227,34 @@ export default function GuestDashboard() {
             `${finalLabel} (Qty: ${qty}) requested`
         );
         setActiveServiceForQty(null);
+    };
+
+    const handleConciergeChat = () => {
+        const phoneSource = conciergeWhatsapp || receptionPhone;
+
+        if (!phoneSource) {
+            setToast({
+                message: "Concierge WhatsApp number is not configured yet",
+                type: "error",
+                isVisible: true
+            });
+            return;
+        }
+
+        const whatsappNumber = phoneSource.replace(/\D/g, "");
+
+        if (!whatsappNumber) {
+            setToast({
+                message: "Concierge WhatsApp number is invalid",
+                type: "error",
+                isVisible: true
+            });
+            return;
+        }
+
+        const guestName = branding?.name || "hotel";
+        const message = `Hi Concierge, I need assistance from Room ${roomNumber || "guest room"} at ${guestName}.`;
+        window.open(`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`, "_blank", "noopener,noreferrer");
     };
 
     return (
@@ -775,6 +804,7 @@ export default function GuestDashboard() {
                     </div>
                     <motion.button 
                         whileTap={{ scale: 0.94 }}
+                        onClick={handleConciergeChat}
                         className="relative z-10 h-11 px-6 bg-[#CFA46A] text-white text-[10px] font-black uppercase tracking-[0.18em] rounded-full shadow-xl shadow-[#CFA46A]/20"
                     >
                         Start Chat
