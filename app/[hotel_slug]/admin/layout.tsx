@@ -122,66 +122,84 @@ export default function AdminLayout({
     }
 
     return (
-        <div className="min-h-screen bg-[#F8F8F8] text-slate-900 flex font-inter">
-            {/* Command Center Sidebar */}
-            <aside className="w-72 bg-white border-r border-slate-200 hidden md:flex flex-col h-screen sticky top-0 z-50 shadow-sm transition-all duration-300">
-                <div className="p-6 border-b border-slate-100 flex items-center space-x-3">
-                    <div className="w-10 h-10 bg-[#0F172A] rounded-xl flex items-center justify-center shadow-lg">
-                        <ShieldAlert className="w-6 h-6 text-[#C6A25A]" />
+        <div className="min-h-screen bg-[#FDFBF9] text-[#1F1F1F] flex font-sans selection:bg-[#CFA46A]/20">
+            {/* 1️⃣ SIDEBAR (The Command Center) */}
+            <aside className="w-72 bg-[#1F1F1F] text-white flex flex-col sticky top-0 h-screen z-50 border-r border-white/5 noise shadow-2xl">
+                <div className="p-8">
+                    <div className="flex items-center space-x-3 mb-10">
+                        <div className="w-10 h-10 bg-[#CFA46A] rounded-xl flex items-center justify-center shadow-lg shadow-[#CFA46A]/20">
+                            <ShieldAlert className="w-6 h-6 text-[#1F1F1F]" />
+                        </div>
+                        <div>
+                            <p className="font-serif font-black text-white text-lg tracking-tight leading-none">MangoH</p>
+                            <p className="text-[10px] font-black text-[#CFA46A] uppercase tracking-[0.3em] mt-1">Control</p>
+                        </div>
                     </div>
-                    <div>
-                        <p className="font-black text-slate-900 text-sm tracking-tight leading-none">Command Center</p>
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Live Ops</p>
+
+                    <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar space-y-8 h-[calc(100vh-320px)]">
+                        {navSections.map((section, sIdx) => {
+                            const filteredItems = section.items.filter(item => item.roles.includes(userRole));
+                            if (filteredItems.length === 0) return null;
+                            
+                            return (
+                                <section key={sIdx}>
+                                    <p className="px-4 text-[10px] font-black text-slate-500 uppercase tracking-[0.4em] mb-4">{section.title}</p>
+                                    <nav className="space-y-1">
+                                        {filteredItems.map((item) => {
+                                            const isActive = pathname === item.href;
+                                            return (
+                                                <Link
+                                                    key={item.id}
+                                                    href={item.href}
+                                                    className={`w-full flex items-center px-4 py-3.5 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all group ${isActive 
+                                                        ? 'bg-[#CFA46A] text-[#1F1F1F] shadow-lg shadow-[#CFA46A]/10' 
+                                                        : 'text-slate-400 hover:bg-white/5 hover:text-white'}`}
+                                                >
+                                                    <item.icon className={`w-4 h-4 mr-3 ${isActive ? 'text-[#1F1F1F]' : 'text-slate-500 group-hover:text-[#CFA46A]'}`} />
+                                                    {item.name}
+                                                </Link>
+                                            );
+                                        })}
+                                    </nav>
+                                </section>
+                            );
+                        })}
                     </div>
                 </div>
 
-                <div className="flex-1 overflow-y-auto p-4 space-y-8 mt-4">
-                    {navSections.map((section, sIdx) => {
-                        const filteredItems = section.items.filter(item => item.roles.includes(userRole));
-                        if (filteredItems.length === 0) return null;
+                <div className="mt-auto p-8 border-t border-white/5 bg-black/20">
+                    <div className="flex flex-col space-y-4">
+                        <button
+                            onClick={() => router.push(`/${hotelSlug}/guest/dashboard`)}
+                            className="w-full flex items-center justify-center px-4 py-4 bg-white/5 border border-white/5 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 hover:bg-white hover:text-[#1F1F1F] transition-all"
+                        >
+                            Switch to Guest View
+                        </button>
                         
-                        return (
-                            <section key={sIdx}>
-                                <p className="px-4 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4">{section.title}</p>
-                                <nav className="space-y-1">
-                                    {filteredItems.map((item) => {
-                                        const isActive = pathname === item.href;
-                                        return (
-                                            <Link
-                                                key={item.id}
-                                                href={item.href}
-                                                className={`w-full flex items-center px-4 py-3 rounded-xl text-sm font-bold transition-all duration-200 ${isActive 
-                                                    ? 'bg-[#0F172A] text-white shadow-lg' 
-                                                    : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'}`}
-                                            >
-                                                <item.icon className={`w-4 h-4 mr-3 ${isActive ? 'text-[#C6A25A]' : 'text-slate-400'}`} />
-                                                {item.name}
-                                            </Link>
-                                        );
-                                    })}
-                                </nav>
-                            </section>
-                        );
-                    })}
-                </div>
-
-                <div className="p-4 border-t border-slate-100 space-y-2">
-                    <button
-                        onClick={() => router.push(`/${hotelSlug}/guest/dashboard`)}
-                        className="w-full flex items-center justify-center px-4 py-3 bg-white border border-slate-200 rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-600 hover:bg-slate-50 transition-all shadow-sm active:scale-[0.98]"
-                    >
-                        Switch to Guest View
-                    </button>
-                    <button
-                        onClick={async () => { await router.push(`/${hotelSlug}/admin/login`); }}
-                        className="w-full flex items-center px-4 py-3 rounded-xl text-sm font-bold text-red-500 hover:bg-red-50 transition-all"
-                    >
-                        <ShieldAlert className="w-4 h-4 mr-3" />
-                        System Exit
-                    </button>
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center space-x-3">
+                                <div className="w-10 h-10 rounded-full bg-slate-800 border-2 border-[#CFA46A]/30 flex items-center justify-center font-black text-[#CFA46A]">
+                                    {profile?.full_name?.[0] || 'A'}
+                                </div>
+                                <div className="flex flex-col">
+                                    <p className="text-[10px] font-black uppercase tracking-widest text-[#CFA46A]">
+                                        {profile?.full_name?.split(' ')[0] || "Admin"}
+                                    </p>
+                                    <p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest">{userRole}</p>
+                                </div>
+                            </div>
+                            <button
+                                onClick={async () => { await router.push(`/${hotelSlug}/admin/login`); }}
+                                className="w-10 h-10 rounded-xl bg-red-500/10 text-red-500 flex items-center justify-center hover:bg-red-500 hover:text-white transition-all"
+                                title="System Exit"
+                            >
+                                <LogOut className="w-5 h-5" />
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </aside>
-            <main className="flex-1 overflow-x-hidden w-full bg-[#F8F8F8]">
+            <main className="flex-1 w-full bg-[#FDFBF9] relative min-h-screen">
                 {children}
             </main>
         </div>

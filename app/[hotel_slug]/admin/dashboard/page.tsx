@@ -278,69 +278,9 @@ export default function AdminDashboard() {
     );
 
     return (
-        <div className="flex min-h-screen bg-[#FDFBF9] font-sans selection:bg-[#CFA46A]/20">
-            {/* 1️⃣ SIDEBAR (The Command Center) */}
-            <aside className="w-72 bg-[#1F1F1F] text-white flex flex-col sticky top-0 h-screen z-50 border-r border-white/5 noise">
-                <div className="p-8">
-                    <div className="flex items-center space-x-3 mb-12">
-                        <div className="w-10 h-10 bg-[#CFA46A] rounded-xl flex items-center justify-center shadow-lg shadow-[#CFA46A]/20">
-                            <Sparkles className="w-6 h-6 text-[#1F1F1F]" />
-                        </div>
-                        <div>
-                            <h2 className="text-xl font-serif font-black tracking-tight leading-none group-hover:text-[#CFA46A] transition-colors">{branding?.name?.split(' ')[0] || "MANGO"}</h2>
-                            <p className="text-[10px] font-black text-[#CFA46A] uppercase tracking-[0.3em] mt-1">Control</p>
-                        </div>
-                    </div>
-
-                    <nav className="space-y-2">
-                        {[
-                            { icon: LayoutDashboard, label: "Overview", active: true },
-                            { icon: MessageSquare, label: "Signals", count: queueSignals.length },
-                            { icon: Users, label: "Guests" },
-                            { icon: ClipboardList, label: "History" },
-                            { icon: Settings, label: "System" },
-                        ].map((item, idx) => (
-                            <button 
-                                key={idx}
-                                className={`w-full flex items-center justify-between px-4 py-3.5 rounded-2xl transition-all group ${item.active ? 'bg-[#CFA46A] text-[#1F1F1F]' : 'text-slate-400 hover:bg-white/5 hover:text-white'}`}
-                            >
-                                <div className="flex items-center space-x-3">
-                                    <item.icon className={`w-5 h-5 ${item.active ? 'text-[#1F1F1F]' : 'text-slate-500 group-hover:text-[#CFA46A]'}`} />
-                                    <span className="text-xs font-black uppercase tracking-widest">{item.label}</span>
-                                </div>
-                                {item.count !== undefined && item.count > 0 && (
-                                    <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-md ${item.active ? 'bg-[#1F1F1F] text-white' : 'bg-[#CFA46A] text-[#1F1F1F]'}`}>
-                                        {item.count}
-                                    </span>
-                                )}
-                            </button>
-                        ))}
-                    </nav>
-                </div>
-
-                <div className="mt-auto p-8 border-t border-white/5 bg-black/20">
-                    <div className="flex items-center space-x-4 mb-6">
-                        <div className="w-10 h-10 rounded-full bg-slate-800 border-2 border-[#CFA46A]/30 flex items-center justify-center font-black text-[#CFA46A]">A</div>
-                        <div>
-                            <p className="text-xs font-black uppercase tracking-widest text-[#CFA46A]">Mission Control</p>
-                            <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Active Ops</p>
-                        </div>
-                    </div>
-                    
-                    <button 
-                         onClick={toggleAudio}
-                         className={`w-full flex items-center justify-center space-x-3 px-4 py-3 rounded-2xl border transition-all ${audioEnabled ? 'border-red-500/50 bg-red-500/10 text-red-500' : 'border-slate-800 text-slate-500'}`}
-                    >
-                        <div className={`w-2 h-2 rounded-full ${audioEnabled ? 'bg-red-500 animate-pulse shadow-[0_0_8px_#EF4444]' : 'bg-slate-700'}`} />
-                        <span className="text-[10px] font-black uppercase tracking-[0.2em]">{audioEnabled ? "Alerts Live" : "Alerts Muted"}</span>
-                    </button>
-                </div>
-            </aside>
-
-            {/* 2️⃣ MAIN CONTENT AREA */}
-            <main className="flex-1 min-h-screen overflow-x-hidden">
-                {/* Content Header */}
-                <header className="h-24 px-12 flex items-center justify-between border-b border-black/[0.03] sticky top-0 bg-[#FDFBF9]/80 backdrop-blur-3xl z-40">
+        <div className="flex-1 overflow-x-hidden">
+            {/* Content Header */}
+            <header className="h-24 px-12 flex items-center justify-between border-b border-black/[0.03] sticky top-0 bg-[#FDFBF9]/80 backdrop-blur-3xl z-40">
                     <div>
                         <h1 className="text-2xl font-serif font-black text-[#1F1F1F] tracking-tight text-shadow-glow">Mission Control</h1>
                         <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mt-1">{branding?.name || "Grand Royale Operations"}</p>
@@ -893,7 +833,6 @@ export default function AdminDashboard() {
                 isVisible={toast.isVisible}
                 onClose={() => setToast((current) => ({ ...current, isVisible: false }))}
             />
-            </main>
         </div>
     );
 }
