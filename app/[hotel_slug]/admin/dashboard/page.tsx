@@ -893,6 +893,7 @@ export default function AdminDashboard() {
                 isVisible={toast.isVisible}
                 onClose={() => setToast((current) => ({ ...current, isVisible: false }))}
             />
+            </main>
         </div>
     );
 }
